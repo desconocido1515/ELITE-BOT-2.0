@@ -1,99 +1,94 @@
-import { WAMessageStubType } from '@whiskeysockets/baileys';
+import fetch from 'node-fetch';
 
-export async function before(m, { conn, groupMetadata }) {
+let handler = m => m;
+
+handler.before = async function (m, { conn }) {
+  if (!m.messageStubType || !m.isGroup) return;
+
+  let chat = global.db.data.chats[m.chat];
+  if (!chat?.welcome) return; // Verifica si welcome está activado
+
+  const STICKER_URLS = [
+    'https://files.catbox.moe/o58tbw.webp',
+    'https://files.catbox.moe/0boonh.webp'
+  ];
+
+  const AUDIO_SALIDA_URLS = [
+    'https://files.catbox.moe/2olqg1.ogg',
+    'https://files.catbox.moe/k8znal.ogg',
+    'https://files.catbox.moe/oj61hq.ogg'
+  ];
+  const AUDIO_BIENVENIDA_URL = 'https://files.catbox.moe/kgykxt.ogg';
+  const IMG_PREDETERMINADA = 'https://n.uguu.se/vldhWGbB.jpg';
+
   try {
-    if (!m.messageStubType || !m.isGroup) return true;
-
-    const chat = global.db?.data?.chats?.[m.chat];
-    if (!chat || !chat.bienvenida) return true;
-
-    const fkontak = {
-      key: {
-        participants: '0@s.whatsapp.net',
-        remoteJid: 'status@broadcast',
-        fromMe: false,
-        id: 'Halo'
-      },
-      message: {
-        contactMessage: {
-          vcard: `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${
-            conn.user.jid.split('@')[0]
-          }:${conn.user.jid.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD`
-        }
-      },
-      participant: '0@s.whatsapp.net'
-    };
-
     let userJid;
-    switch (m.messageStubType) {
-      case WAMessageStubType.GROUP_PARTICIPANT_ADD:
-      case WAMessageStubType.GROUP_PARTICIPANT_REMOVE:
-        userJid = m.messageStubParameters?.[0];
-        break;
-      case WAMessageStubType.GROUP_PARTICIPANT_LEAVE:
-        userJid = m.key.participant;
-        break;
-      default:
-        return true;
+    if ([28, 32].includes(m.messageStubType)) {
+      // Usuario salió
+      userJid = m.key.participant;
+    } else if (m.messageStubType === 27) {
+      // Usuario entró
+      userJid = m.messageStubParameters?.[0];
+    } else {
+      return;
     }
 
-    if (!userJid) return true;
-
     const user = `@${userJid.split('@')[0]}`;
-    const groupName = groupMetadata.subject;
-    const groupDesc = groupMetadata.desc || '📜 Sin descripción disponible';
 
-    // Obtener foto de perfil o predeterminada
+    // Obtener foto de perfil del usuario o predeterminada
     let imgBuffer;
     try {
       const ppUrl = await conn.profilePictureUrl(userJid, 'image');
-      imgBuffer = { url: ppUrl }; // enviar por URL directamente
+      imgBuffer = { url: ppUrl };
     } catch {
-      imgBuffer = { url: 'https://n.uguu.se/vldhWGbB.jpg' }; // predeterminada
+      imgBuffer = { url: IMG_PREDETERMINADA };
     }
 
-    const { customWelcome, customBye } = chat;
+    // RETRASO para que WhatsApp procese correctamente
+    setTimeout(async () => {
+      if ([28, 32].includes(m.messageStubType)) {
+        // SALIDA: sticker o audio aleatorio
+        const isSticker = Math.random() < 0.5;
+        if (isSticker) {
+          const url = STICKER_URLS[Math.floor(Math.random() * STICKER_URLS.length)];
+          const sticker = await (await fetch(url)).buffer();
+          await conn.sendMessage(m.chat, { sticker });
+        } else {
+          const url = AUDIO_SALIDA_URLS[Math.floor(Math.random() * AUDIO_SALIDA_URLS.length)];
+          const audio = await (await fetch(url)).buffer();
+          await conn.sendMessage(m.chat, {
+            audio,
+            mimetype: 'audio/ogg; codecs=opus',
+            ptt: true
+          });
+        }
 
-    // Bienvenida
-    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
-      const welcomeText = customWelcome
-        ? customWelcome.replace(/@user/gi, user).replace(/@group/gi, groupName).replace(/@desc/gi, groupDesc)
-        : `🎉 *¡HOLA ${user}!* 🎉\n\nBienvenido/a a *${groupName}*.\n\n📚 *Sobre nosotros:*\n_${groupDesc}_\n\n🌟 ¡Esperamos que disfrutes tu estancia!`;
+        // También enviar imagen de despedida
+        await conn.sendMessage(m.chat, {
+          image: imgBuffer,
+          caption: `🚶‍♂️ ${user} ha salido del grupo.`
+        });
+      }
 
-      await conn.sendMessage(m.chat, {
-        image: imgBuffer,
-        caption: welcomeText,
-        mentions: [userJid]
-      }, { quoted: fkontak });
+      if (m.messageStubType === 27) {
+        // ENTRADA: enviar imagen + audio de bienvenida
+        await conn.sendMessage(m.chat, {
+          image: imgBuffer,
+          caption: `🎉 ¡Bienvenido/a ${user}! 🎉`
+        });
 
-      // Enviar audio por URL directamente
-      await conn.sendMessage(m.chat, {
-        audio: { url: 'https://files.catbox.moe/kgykxt.ogg' },
-        mimetype: 'audio/ogg',
-        ptt: false
-      }, { quoted: fkontak });
-    }
+        const audio = await (await fetch(AUDIO_BIENVENIDA_URL)).buffer();
+        await conn.sendMessage(m.chat, {
+          audio,
+          mimetype: 'audio/ogg; codecs=opus',
+          ptt: true
+        });
+      }
+    }, 2000);
 
-    // Despedida
-    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE) {
-      const goodbyeText = customBye
-        ? customBye.replace(/@user/gi, user).replace(/@group/gi, groupName)
-        : `🚶‍♂️ *¡Adiós ${user}!* 😔\n\nGracias por haber formado parte de *${groupName}*. ¡Vuelve cuando quieras!`;
-
-      await conn.sendMessage(m.chat, {
-        image: imgBuffer,
-        caption: goodbyeText,
-        mentions: [userJid]
-      }, { quoted: fkontak });
-
-      await conn.sendMessage(m.chat, {
-        audio: { url: 'https://files.catbox.moe/2olqg1.ogg' },
-        mimetype: 'audio/ogg',
-        ptt: false
-      }, { quoted: fkontak });
-    }
-
-  } catch (error) {
-    console.error('❌ Error general en la función de bienvenida/despedida:', error);
+  } catch (e) {
+    console.error('Error manejando entrada/salida de grupo:', e);
   }
-}
+};
+
+export default handler;

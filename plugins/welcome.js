@@ -17,7 +17,7 @@ export async function before(m, { conn, groupMetadata }) {
       },
       message: {
         contactMessage: {
-          vcard: `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL=${
+          vcard: `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${
             conn.user.jid.split('@')[0]
           }:${conn.user.jid.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD`
         }
@@ -25,16 +25,14 @@ export async function before(m, { conn, groupMetadata }) {
       participant: '0@s.whatsapp.net'
     };
 
+    // Determinar el usuario afectado según el tipo de evento
     let userJid;
     switch (m.messageStubType) {
-      // ----------------------------
-      // ENUMERACIÓN DE EVENTOS
-      // ----------------------------
-      case WAMessageStubType.GROUP_PARTICIPANT_ADD: // 27 → Usuario entró al grupo
-      case WAMessageStubType.GROUP_PARTICIPANT_REMOVE: // 29 → Usuario expulsado
+      case WAMessageStubType.GROUP_PARTICIPANT_ADD:       // 27
+      case WAMessageStubType.GROUP_PARTICIPANT_REMOVE:    // 29
         userJid = m.messageStubParameters?.[0];
         break;
-      case WAMessageStubType.GROUP_PARTICIPANT_LEAVE: // 28 → Usuario salió voluntariamente
+      case WAMessageStubType.GROUP_PARTICIPANT_LEAVE:     // 28
         userJid = m.key.participant;
         break;
       default:
@@ -47,7 +45,7 @@ export async function before(m, { conn, groupMetadata }) {
     const groupName = groupMetadata.subject;
     const IMG_PREDETERMINADA = 'https://n.uguu.se/vldhWGbB.jpg';
 
-    // Obtener foto de perfil del usuario o imagen predeterminada
+    // Intentar obtener foto de perfil del usuario
     let imgBuffer;
     try {
       const ppUrl = await conn.profilePictureUrl(userJid, 'image');
@@ -56,18 +54,19 @@ export async function before(m, { conn, groupMetadata }) {
       imgBuffer = { url: IMG_PREDETERMINADA };
     }
 
-    // Stickers y audios
+    // Audios y stickers
     const STICKER_URLS = [
       'https://files.catbox.moe/o58tbw.webp',
       'https://files.catbox.moe/0boonh.webp'
     ];
 
-    const AUDIO_BIENVENIDA_URL = 'https://files.catbox.moe/kgykxt.ogg';
     const AUDIO_SALIDA_URLS = [
       'https://files.catbox.moe/2olqg1.ogg',
       'https://files.catbox.moe/k8znal.ogg',
       'https://files.catbox.moe/oj61hq.ogg'
     ];
+
+    const AUDIO_BIENVENIDA_URL = 'https://files.catbox.moe/kgykxt.ogg';
 
     const sendAudio = async (url) => {
       try {
@@ -92,30 +91,33 @@ export async function before(m, { conn, groupMetadata }) {
       }
     };
 
+    // Espera corta para evitar conflictos con WhatsApp
     setTimeout(async () => {
-      // Actualizar metadata del grupo en tiempo real
       const updatedGroup = await conn.groupMetadata(m.chat);
       const memberCount = updatedGroup.participants.length;
 
-      // ----------------------------
       // BIENVENIDA
-      // ----------------------------
       if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
         const welcomeText = `╭━━━━━━━━⋆⋆━━━━━━━━─
 ┃ ⏤͟͟͞͞𝗕𝗜𝗘𝗡𝗩𝗘𝗡𝗜𝗗𝗢 🌟
 ┃ 👤 ${user}
+┃ 
 ┃ 🏆 𝗖𝗟𝗔𝗡 : 
 ┃ ${groupName}
 ┃ 📊 Integrantes actuales: ${memberCount}
+┃ ❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘ 
 ╰━━━━━━━━⋆⋆━━━━━━━━─`;
 
-        await conn.sendMessage(m.chat, { image: imgBuffer, caption: welcomeText, mentions: [userJid] }, { quoted: fkontak });
+        await conn.sendMessage(m.chat, {
+          image: imgBuffer,
+          caption: welcomeText,
+          mentions: [userJid]
+        }, { quoted: fkontak });
+
         await sendAudio(AUDIO_BIENVENIDA_URL);
       }
 
-      // ----------------------------
       // DESPEDIDA
-      // ----------------------------
       if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE) {
         const goodbyeText = `╭━━━━━━━━⋆⋆━━━━━━━━─
 ┃ 𝗦𝗘 𝗦𝗔𝗟𝗜𝗢 𝗨𝗡𝗔 𝗕𝗔𝗦𝗨𝗥𝗔.
@@ -125,7 +127,11 @@ export async function before(m, { conn, groupMetadata }) {
 ┃ 📊 Integrantes actuales: ${memberCount}
 ╰━━━━━━━━⋆⋆━━━━━━━━─`;
 
-        await conn.sendMessage(m.chat, { image: imgBuffer, caption: goodbyeText, mentions: [userJid] }, { quoted: fkontak });
+        await conn.sendMessage(m.chat, {
+          image: imgBuffer,
+          caption: goodbyeText,
+          mentions: [userJid]
+        }, { quoted: fkontak });
 
         if (Math.random() < 0.5) {
           await sendSticker();
@@ -135,9 +141,7 @@ export async function before(m, { conn, groupMetadata }) {
         }
       }
 
-      // ----------------------------
       // EXPULSIÓN
-      // ----------------------------
       if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE) {
         const kickText = `╭━━━━━━━━⋆⋆━━━━━━━━─
 ┃ 𝗦𝗘 𝗦𝗔𝗟𝗜𝗢 𝗨𝗡𝗔 𝗕𝗔𝗦𝗨𝗥𝗔.
@@ -147,7 +151,11 @@ export async function before(m, { conn, groupMetadata }) {
 ┃ 📊 Integrantes actuales: ${memberCount}
 ╰━━━━━━━━⋆⋆━━━━━━━━─`;
 
-        await conn.sendMessage(m.chat, { image: imgBuffer, caption: kickText, mentions: [userJid] }, { quoted: fkontak });
+        await conn.sendMessage(m.chat, {
+          image: imgBuffer,
+          caption: kickText,
+          mentions: [userJid]
+        }, { quoted: fkontak });
 
         if (Math.random() < 0.5) {
           await sendSticker();
@@ -160,6 +168,6 @@ export async function before(m, { conn, groupMetadata }) {
     }, 2000);
 
   } catch (error) {
-    console.error('❌ Error en bienvenida/despedida/expulsión:', error);
+    console.error('❌ Error general en la función de bienvenida/despedida/expulsión:', error);
   }
 }

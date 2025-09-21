@@ -19,18 +19,7 @@ let handler = async (m, { conn, args, usedPrefix, command}) => {
       let img = await q.download?.()
       if (!img) {
         return conn.reply(m.chat,
-`╭─〔 🌟 *CREADOR DE STICKERS* 🌟 〕─╮
-│
-│ 🖼️ *Envía una imagen o video corto*
-│     para generar tu sticker personalizado.
-│
-│ ⏱️ *Máx. duración de video:* 15 segundos
-│
-│ 🌐 También puedes usar un enlace:
-│     *.sticker https://ejemplo.com/imagen.png*
-│
-│ 🚀 ¡Exprésate con estilo!
-╰──────────────────────────────╯`, m, rcanal)
+`¡𝘌𝘺 , 𝘳𝘦𝘴𝘱𝘰𝘯𝘥𝘦 𝘢 𝘶𝘯𝘢 𝘪𝘮𝘢𝘨𝘦𝘯!`, m, rcanal)
 }
 
       let out

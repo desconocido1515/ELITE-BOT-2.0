@@ -46,7 +46,7 @@ export async function before(m, { conn, groupMetadata}) {
 
     // Nuevo diseño personalizado
     const imgBuffer = await fetch(
-      'https://canvas-8zhi.onrender.com/api/welcome?title=Bienvenido&desc=Al%20grupo&profile=https://i.postimg.cc/GtTBLVH0/1757995590948.jpg&background=https://qu.ax/RziWb.jpg'
+      'https://n.uguu.se/vldhWGbB.jpg'
 ).then(res => res.buffer());
 
     const { customWelcome, customBye, customKick} = chat;

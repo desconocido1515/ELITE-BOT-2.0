@@ -188,45 +188,16 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isR
 
     default:
       if (!/[01]/.test(command)) return m.reply(`
-*🧑‍💻 INGRESE UNA OPCIÓN PARA ACTIVAR O DESACTIVAR*
+~ CENTRO DE CONFIGURACIÓN
 
-*🔖 LISTA DE OPCIONES*
-*Tipo :* welcome
-*Descripción :* Des/Activa la *Bienvenida* y *Despedida* para Grupos
+🌟 ¡Hola! 
 
-*Tipo :* nsfw 
-*Descripción :* Des/Activa los comandos *NSFW* para Grupos
+Quizás usaste mal el comando.
+usar los comandos :
+.guia
+.guia2
 
-*Tipo :* antilag
-*Descripción :* Des/Activa el *AntiLag* en un grupo*
-*Tipo :* antiarabes 
-*Descripción :* Des/Activa el *AntiArabes* para Grupos
-
-*Tipo :* antilink 
-*Descripción :* Des/Activa el *AntiLink* para Grupos
-
-*Tipo :* autoread 
-*Descripción :* Des/Activa el *AutoRead* para el Bot
-
-*Tipo :* restrict
-*Description :* Des/Activa el *Restrict*
-para el bot
-
-*Tipo :* document 
-*Descripción :* Des/Activa la *Descarga En Documentos* para el Usuario
-
-*Tipo :* modoadmin
-*Descripción :* Des/Activa la *modoadmin* para el Usuario
-
-*Tipo :* audios
-*Descripción :* Des/Activa la *audios* para el Usuario
-
-*Tipo :* subbots
-*Descripción :* Des/Activa la *subbots* para el Usuario
-
-
-*• Ejemplo:*
-*- ${usedPrefix + command}* welcome
+𝙀𝙡𝙞𝙩𝙚 𝘽𝙤𝙩 // 𝙋𝙧𝙤𝙮𝙚𝙘𝙩𝙤 𝙓
 `.trim())
       throw false
   }

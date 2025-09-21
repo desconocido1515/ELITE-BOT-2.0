@@ -42,7 +42,6 @@ export async function before(m, { conn, groupMetadata }) {
 
     const user = `@${userJid.split('@')[0]}`;
     const groupName = groupMetadata.subject;
-    const groupDesc = groupMetadata.desc || '📜 Sin descripción disponible';
     const IMG_PREDETERMINADA = 'https://n.uguu.se/vldhWGbB.jpg';
 
     // Intentar obtener foto de perfil del usuario
@@ -53,8 +52,6 @@ export async function before(m, { conn, groupMetadata }) {
     } catch {
       imgBuffer = { url: IMG_PREDETERMINADA };
     }
-
-    const { customWelcome, customBye, customKick } = chat;
 
     // Stickers y audios aleatorios
     const STICKER_URLS = [
@@ -83,7 +80,6 @@ export async function before(m, { conn, groupMetadata }) {
       }
     };
 
-    // Función para enviar sticker aleatorio
     const sendSticker = async () => {
       try {
         const url = STICKER_URLS[Math.floor(Math.random() * STICKER_URLS.length)];
@@ -94,39 +90,46 @@ export async function before(m, { conn, groupMetadata }) {
       }
     };
 
-    // RETRASO para asegurar que WhatsApp procese los mensajes
     setTimeout(async () => {
       // BIENVENIDA
       if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
-        const welcomeText = customWelcome
-          ? customWelcome.replace(/@user/gi, user).replace(/@group/gi, groupName).replace(/@desc/gi, groupDesc)
-          : `🎉 *¡HOLA ${user}!* 🎉\n\nBienvenido/a a *${groupName}*.\n\n📚 *Sobre nosotros:*\n_${groupDesc}_\n\n🌟 ¡Esperamos que disfrutes tu estancia!`;
+        const memberCount = groupMetadata.participants.length; // número de integrantes después de agregar
+        const welcomeText = `╭━━━━━━━━⋆⋆━━━━━━━━─
+┃ ⏤͟͟͞͞𝗕𝗜𝗘𝗡𝗩𝗘𝗡𝗜𝗗𝗢 🌟
+┃ 👤 ${user}
+┃ 
+┃ 🏆 𝗖𝗟𝗔𝗡 : 
+┃ ${groupName}
+┃ 📊 Integrantes actuales: ${memberCount}
+┃ ❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘ 
+╰━━━━━━━━⋆⋆━━━━━━━━─`;
 
-        // Primero enviar imagen + texto
         await conn.sendMessage(m.chat, {
           image: imgBuffer,
           caption: welcomeText,
           mentions: [userJid]
         }, { quoted: fkontak });
 
-        // Después enviar audio de bienvenida
         await sendAudio(AUDIO_BIENVENIDA_URL);
       }
 
       // DESPEDIDA
       if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE) {
-        const goodbyeText = customBye
-          ? customBye.replace(/@user/gi, user).replace(/@group/gi, groupName)
-          : `😂 *Te extrañaremos pendejo* 🖕🏻\n\nGracias por haber formado parte de *${groupName}*`;
+        const memberCount = groupMetadata.participants.length; // número de integrantes después de salir
+        const goodbyeText = `╭━━━━━━━━⋆⋆━━━━━━━━─
+┃ 𝗦𝗘 𝗦𝗔𝗟𝗜𝗢 𝗨𝗡𝗔 𝗕𝗔𝗦𝗨𝗥𝗔.
+┃ -1 𝗜𝗡𝗦𝗘𝗥𝗩𝗜𝗕𝗟𝗘 🚮
+┃ ${user}
+┃ 𝗘𝗦𝗖𝗨𝗣𝗔𝗡𝗟𝗘 𝗘𝗡 𝗘𝗦𝗔 𝗖𝗔𝗥𝗔. 
+┃ 📊 Integrantes actuales: ${memberCount}
+╰━━━━━━━━⋆⋆━━━━━━━━─`;
 
-        // Primero enviar imagen + texto
         await conn.sendMessage(m.chat, {
           image: imgBuffer,
           caption: goodbyeText,
           mentions: [userJid]
         }, { quoted: fkontak });
 
-        // Después enviar sticker o audio aleatorio
         if (Math.random() < 0.5) {
           await sendSticker();
         } else {
@@ -137,18 +140,21 @@ export async function before(m, { conn, groupMetadata }) {
 
       // EXPULSIÓN
       if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE) {
-        const kickText = customKick
-          ? customKick.replace(/@user/gi, user).replace(/@group/gi, groupName)
-          : `😂 *Te extrañaremos pendejo* 🖕🏻\n\n*${user}* ha sido expulsado de *${groupName}*`;
+        const memberCount = groupMetadata.participants.length; // número de integrantes después de la expulsión
+        const kickText = `╭━━━━━━━━⋆⋆━━━━━━━━─
+┃ 𝗦𝗘 𝗦𝗔𝗟𝗜𝗢 𝗨𝗡𝗔 𝗕𝗔𝗦𝗨𝗥𝗔.
+┃ -1 𝗜𝗡𝗦𝗘𝗥𝗩𝗜𝗕𝗟𝗘 🚮
+┃ ${user}
+┃ 𝗘𝗦𝗖𝗨𝗣𝗔𝗡𝗟𝗘 𝗘𝗡 𝗘𝗦𝗔 𝗖𝗔𝗥𝗔. 
+┃ 📊 Integrantes actuales: ${memberCount}
+╰━━━━━━━━⋆⋆━━━━━━━━─`;
 
-        // Primero enviar imagen + texto
         await conn.sendMessage(m.chat, {
           image: imgBuffer,
           caption: kickText,
           mentions: [userJid]
         }, { quoted: fkontak });
 
-        // Después enviar sticker o audio aleatorio
         if (Math.random() < 0.5) {
           await sendSticker();
         } else {
@@ -156,6 +162,7 @@ export async function before(m, { conn, groupMetadata }) {
           await sendAudio(audioUrl);
         }
       }
+
     }, 2000);
 
   } catch (error) {

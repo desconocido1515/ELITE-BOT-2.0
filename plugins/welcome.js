@@ -1,96 +1,111 @@
-import fs from 'fs'
-import fetch from 'node-fetch'
+import { WAMessageStubType} from '@whiskeysockets/baileys';
+import fetch from 'node-fetch';
 
-let handler = m => m
-
-handler.before = async function (m, { conn, participants, groupMetadata, isBotAdmin }) {
-  if (!m.messageStubType || !m.isGroup) return
-
-  // Foto predeterminada en ruta local
-  const FOTO_PREDETERMINADA = './src/sinfoto2.jpg'
-
-  let pp
+export async function before(m, { conn, groupMetadata}) {
   try {
-    // Intentar obtener la foto de perfil del usuario
-    pp = await conn.profilePictureUrl(m.messageStubParameters[0], 'image').catch(_ => null)
-  } catch {
-    pp = null
-  }
+    if (!m.messageStubType ||!m.isGroup) return true;
 
-  let img
-  if (pp) {
-    try {
-      img = await (await fetch(pp)).buffer()
-    } catch {
-      img = null
-    }
-  }
+    const chat = global.db?.data?.chats?.[m.chat];
+    if (!chat ||!chat.bienvenida) return true;
 
-  if (!img) {
-    // Si no hay imagen externa, usa la imagen local
-    try {
-      img = fs.readFileSync(FOTO_PREDETERMINADA)
-    } catch {
-      img = null // Si tampoco existe la imagen local
-    }
-  }
+    const fkontak = {
+      key: {
+        participants: '0@s.whatsapp.net',
+        remoteJid: 'status@broadcast',
+        fromMe: false,
+        id: 'Halo'
+},
+      message: {
+        contactMessage: {
+          vcard: `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${
+            conn.user.jid.split('@')[0]
+}:${conn.user.jid.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD`
+}
+},
+      participant: '0@s.whatsapp.net'
+};
 
-  let usuario = `@${m.sender.split`@`[0]}`
-  let chat = global.db.data.chats[m.chat]
-  let users = participants.map(u => conn.decodeJid(u.id))
-
-  if (chat.welcome && m.messageStubType == 27 && this.user.jid != global.conn.user.jid) {
-    let subject = groupMetadata.subject
-    let descs = groupMetadata.desc || "Sin descripción"
-    let userName = `${m.messageStubParameters[0].split`@`[0]}`
-    let defaultWelcome = `*╔══════════════*
-*╟* 𝗕𝗜𝗘𝗡𝗩𝗘𝗡𝗜𝗗𝗢/𝗔
-*╠══════════════*
-*╟*🛡️ *${subject}*
-*╟*👤 *@${userName}*
-*╟* 𝗜𝗡𝗙𝗢𝗥𝗠𝗔𝗖𝗜𝗢́𝗡 
-
-${descs}
-
-*╟* ¡🇼‌🇪‌🇱‌🇨‌🇴‌🇲‌🇪!
-*╚══════════════*`
-
-    let textWel = chat.sWelcome ? chat.sWelcome
-      .replace(/@user/g, `@${userName}`)
-      .replace(/@group/g, subject)
-      .replace(/@desc/g, descs)
-      : defaultWelcome
-
-    await this.sendMessage(m.chat, { 
-      image: img,
-      caption: textWel,
-      contextInfo: {
-        mentionedJid: [m.sender, m.messageStubParameters[0]]
-      }
-    }, { quoted: m })
-  }
-
-  else if (chat.welcome && m.messageStubType == 28 && this.user.jid != global.conn.user.jid) {
-    let subject = groupMetadata.subject
-    let userName = `${m.messageStubParameters[0].split`@`[0]}`
-    let defaultBye = `*╔══════════════*
-*╟* *SE FUE UNA BASURA*
-*╟*👤 @${userName}* 
-*╚══════════════*`
-
-    let textBye = chat.sBye ? chat.sBye
-      .replace(/@user/g, `@${userName}`)
-      .replace(/@group/g, subject)
-      : defaultBye
-
-    await this.sendMessage(m.chat, { 
-      image: img,
-      caption: textBye,
-      contextInfo: {
-        mentionedJid: [m.sender, m.messageStubParameters[0]]
-      }
-    }, { quoted: m })
-  }
+    let userJid;
+    switch (m.messageStubType) {
+      case WAMessageStubType.GROUP_PARTICIPANT_ADD:
+      case WAMessageStubType.GROUP_PARTICIPANT_REMOVE:
+        userJid = m.messageStubParameters?.[0];
+        break;
+      case WAMessageStubType.GROUP_PARTICIPANT_LEAVE:
+        userJid = m.key.participant;
+        break;
+      default:
+        return true;
 }
 
-export default handler
+    if (!userJid) return true;
+
+    const user = `@${userJid.split('@')[0]}`;
+    const groupName = groupMetadata.subject;
+    const groupDesc = groupMetadata.desc || '📜 Sin descripción disponible';
+
+    // Nuevo diseño personalizado
+    const imgBuffer = await fetch(
+      'https://canvas-8zhi.onrender.com/api/welcome?title=Bienvenido&desc=Al%20grupo&profile=https://i.postimg.cc/GtTBLVH0/1757995590948.jpg&background=https://qu.ax/RziWb.jpg'
+).then(res => res.buffer());
+
+    const { customWelcome, customBye, customKick} = chat;
+
+    const sendAudio = async (url) => {
+      try {
+        const audioBuffer = await fetch(url).then(res => res.buffer());
+        await conn.sendMessage(m.chat, {
+          audio: audioBuffer,
+          mimetype: 'audio/ogg; codecs=opus',
+          ptt: false
+}, { quoted: fkontak});
+} catch (err) {
+        console.error('❌ Error al enviar el audio:', err);
+}
+};
+
+    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
+      const welcomeText = customWelcome
+? customWelcome.replace(/@user/gi, user).replace(/@group/gi, groupName).replace(/@desc/gi, groupDesc)
+: `🎉 *¡HOLA ${user}!* 🎉\n\nBienvenido/a a *${groupName}*.\n\n📚 *Sobre nosotros:*\n_${groupDesc}_\n\n🌟 ¡Esperamos que disfrutes tu estancia!`;
+
+      await conn.sendMessage(m.chat, {
+        image: imgBuffer,
+        caption: welcomeText,
+        mentions: [userJid]
+}, { quoted: fkontak});
+
+      await sendAudio('https://files.catbox.moe/kgykxt.ogg');
+}
+
+    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE) {
+      const goodbyeText = customBye
+? customBye.replace(/@user/gi, user).replace(/@group/gi, groupName)
+: `🚶‍♂️ *¡Adiós ${user}!* 😔\n\nGracias por haber formado parte de *${groupName}*. ¡Vuelve cuando quieras!`;
+
+      await conn.sendMessage(m.chat, {
+        image: imgBuffer,
+        caption: goodbyeText,
+        mentions: [userJid]
+}, { quoted: fkontak});
+
+      await sendAudio('https://files.catbox.moe/2olqg1.ogg');
+}
+
+    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE) {
+      const kickText = customKick
+? customKick.replace(/@user/gi, user).replace(/@group/gi, groupName)
+: `🚨 *${user} ha sido expulsado del grupo* 🚨\n\nMantengamos un ambiente respetuoso en *${groupName}*`;
+
+      await conn.sendMessage(m.chat, {
+        image: imgBuffer,
+        caption: kickText,
+        mentions: [userJid]
+}, { quoted: fkontak});
+
+      await sendAudio('https://cdn.russellxz.click/5c471e35.mp3');
+}
+} catch (error) {
+    console.error('❌ Error general en la función de bienvenida/despedida/expulsión:', error);
+}
+}

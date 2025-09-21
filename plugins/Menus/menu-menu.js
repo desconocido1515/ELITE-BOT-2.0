@@ -29,11 +29,10 @@ let fkontak = {
   }, 
   "participant": "0@s.whatsapp.net" 
 }
-
+m.react('🔰')
 let menu = `
 *¡Hola!* ⭐ @${m.sender.split("@")[0]}
-
-\`\`\`${horarioFecha}\`\`\`
+\`\`\`${week}, ${date}\`\`\`
 
 ╭━━━━━━⋆★⋆━━━━━━─
 ┃ ⏤͟͟͞͞𝗖𝗥𝗘𝗔𝗗𝗢𝗥 𝗘𝗕𝗚:

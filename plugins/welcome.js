@@ -93,7 +93,8 @@ export async function before(m, { conn, groupMetadata }) {
     setTimeout(async () => {
       // BIENVENIDA
       if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
-        const memberCount = groupMetadata.participants.length; // número de integrantes después de agregar
+        const updatedGroup = await conn.groupMetadata(m.chat);
+        const memberCount = updatedGroup.participants.length; // número de integrantes después de agregar
         const welcomeText = `╭━━━━━━━━⋆⋆━━━━━━━━─
 ┃ ⏤͟͟͞͞𝗕𝗜𝗘𝗡𝗩𝗘𝗡𝗜𝗗𝗢 🌟
 ┃ 👤 ${user}
@@ -115,7 +116,9 @@ export async function before(m, { conn, groupMetadata }) {
 
       // DESPEDIDA
       if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE) {
-        const memberCount = groupMetadata.participants.length; // número de integrantes después de salir
+        const updatedGroup = await conn.groupMetadata(m.chat);
+        const memberCount = updatedGroup.participants.length; // número de integrantes después de salir
+
         const goodbyeText = `╭━━━━━━━━⋆⋆━━━━━━━━─
 ┃ 𝗦𝗘 𝗦𝗔𝗟𝗜𝗢 𝗨𝗡𝗔 𝗕𝗔𝗦𝗨𝗥𝗔.
 ┃ -1 𝗜𝗡𝗦𝗘𝗥𝗩𝗜𝗕𝗟𝗘 🚮
@@ -140,7 +143,9 @@ export async function before(m, { conn, groupMetadata }) {
 
       // EXPULSIÓN
       if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE) {
-        const memberCount = groupMetadata.participants.length; // número de integrantes después de la expulsión
+        const updatedGroup = await conn.groupMetadata(m.chat);
+        const memberCount = updatedGroup.participants.length; // número de integrantes después de la expulsión
+
         const kickText = `╭━━━━━━━━⋆⋆━━━━━━━━─
 ┃ 𝗦𝗘 𝗦𝗔𝗟𝗜𝗢 𝗨𝗡𝗔 𝗕𝗔𝗦𝗨𝗥𝗔.
 ┃ -1 𝗜𝗡𝗦𝗘𝗥𝗩𝗜𝗕𝗟𝗘 🚮

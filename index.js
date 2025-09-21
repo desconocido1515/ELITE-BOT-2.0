@@ -29,7 +29,7 @@ function verify() {
 verify();
 
 // Diseño para "Sasuke Bot"
-say('sᥲsᥙkᥱ ᑲ᥆𝗍', {
+say('ELITE BOT 2.0', {
   font: 'block', // Estilo 'block' para un diseño fuerte
   align: 'center',
   colors: ['red', 'white'], // Colores que recuerdan al Sharingan

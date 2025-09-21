@@ -561,7 +561,6 @@ await conn.sendMessage(m.chat, { image: gataImg.getRandom(), gifPlayback: false,
 } catch (error) {
 try{
 await conn.sendFile(m.chat, imagen5, 'menu.jpg', menu, fkontak, false, { mentions: [m.sender, global.conn.user.jid] })
-
 } catch (error) {
 return 
 }}}} 
@@ -571,11 +570,11 @@ await m.reply(lenguajeGB['smsMalError3']() + '\n*' + lenguajeGB.smsMensError1() 
 console.log(`❗❗ ${lenguajeGB['smsMensError2']()} ${usedPrefix + command} ❗❗`)
 console.log(e)}}
 
-handler.command = /^(menu|comandos|comando|menú)$/i
-handler.register = false
-handler.group = true
-export default handler
-    
+handler.customPrefix = /menu|comandos/i 
+handler.command = new RegExp
+handler.exp = 0
+export default handler;   
+
 function clockString(ms) {
 let h = isNaN(ms) ? '--' : Math.floor(ms / 3600000)
 let m = isNaN(ms) ? '--' : Math.floor(ms / 60000) % 60

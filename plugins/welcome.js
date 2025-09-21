@@ -96,7 +96,7 @@ export async function before(m, { conn, groupMetadata }) {
         mentions: [userJid]
       }, { quoted: fkontak });
 
-      await sendAudio('https://files.catbox.moe/2olqg1.ogg');
+      await sendAudio('https://files.catbox.moe/oj61hq.ogg');
     }
 
     // Expulsión

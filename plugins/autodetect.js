@@ -7,11 +7,18 @@ const handler = m => m
 handler.before = async function (m, { conn, participants, groupMetadata }) {
     if (!m.messageStubType || !m.isGroup) return
     const chat = global.db.data.chats[m.chat]
-    const usuario = await resolveLidToRealJid(m?.sender, conn, m?.chat)
+    const usuarioJid = await resolveLidToRealJid(m?.sender, conn, m?.chat)
+    const usuario = await conn.getName(usuarioJid) // <- Nombre real del contacto
     const groupAdmins = participants.filter(p => p.admin)
-    const users = m.messageStubParameters?.[0] ? [m.messageStubParameters[0]] : []
 
-    // Configuración del externalAdReply
+    // fkontak para quotes
+    let fkontak = { 
+        key: { participants:"0@s.whatsapp.net", remoteJid: "status@broadcast", fromMe: false, id: "Halo" }, 
+        message: { contactMessage: { vcard: `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${m.sender.split('@')[0]}:${m.sender.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD` }},
+        participant: "0@s.whatsapp.net" 
+    }
+
+    // externalAdReply
     const externalAdReply = {
         title: "𐔌 . ⋮ ᗩ ᐯ I Տ O .ᐟ ֹ ₊ ꒱",
         body: "¡Bot activo!",
@@ -24,15 +31,8 @@ handler.before = async function (m, { conn, participants, groupMetadata }) {
         renderLargerThumbnail: false
     }
 
-    // fkontak para quotes
-    let fkontak = { 
-        key: { participants:"0@s.whatsapp.net", remoteJid: "status@broadcast", fromMe: false, id: "Halo" }, 
-        message: { contactMessage: { vcard: `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${m.sender.split('@')[0]}:${m.sender.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD` }},
-        participant: "0@s.whatsapp.net" 
-    }
-
     // Función para enviar mensajes con externalAdReply
-    async function sendReply(text, mentions = [m.sender], image = null) {
+    async function sendReply(text, mentions = [usuarioJid], image = null) {
         const messageOptions = {
             mentions,
             contextInfo: { externalAdReply }
@@ -45,13 +45,20 @@ handler.before = async function (m, { conn, participants, groupMetadata }) {
     }
 
     if (chat.detect) {
-        if (m.messageStubType == 21) await sendReply(`@${usuario.split('@')[0]} 𝙃𝘼𝙎 𝘾𝘼𝙈𝘽𝙄𝘼𝘿𝙊 𝙀𝙇 𝙉𝙊𝙈𝘽𝙍𝙀́ 𝘿𝙀𝙇 𝙂𝙍𝙐𝙋𝙊 A:\n\n*${m.messageStubParameters[0]}*`)
-        else if (m.messageStubType == 22) await sendReply(`@${usuario.split('@')[0]} 𝙃𝘼𝙎 𝘾𝘼𝙈𝘽𝙄𝘼𝘿𝙊 𝙇𝘼𝙎 𝙁𝙊𝙏𝙊 𝘿𝙀𝙇 𝙂𝙍𝙐𝙋𝙊`)
-        else if (m.messageStubType == 24) await sendReply(`@${usuario.split('@')[0]} 𝙉𝙐𝙀𝙑𝘼 𝘿𝙀𝙎𝘾𝙍𝙄𝙋𝘾𝙄𝙊𝙉 𝘿𝙀𝙇 𝙂𝙍𝙐𝙋𝙊 𝙀𝙎:\n\n${m.messageStubParameters[0]}`)
-        else if (m.messageStubType == 25) await sendReply(`🔒 𝘼𝙃𝙊𝙍𝘼 *${m.messageStubParameters[0] == 'on' ? '𝙎𝙊𝙇𝙊 𝘼𝘿𝙈𝙄𝙉𝙎' : '𝙏𝙊𝘿𝙊𝙎'}* 𝙋𝙐𝙀𝘿𝙀 𝙀𝘿𝙄𝙏𝘼𝙍 𝙇𝘼 𝙄𝙉𝙁𝙊𝙍𝙈𝘼𝘾𝙄𝙊𝙉 𝘿𝙀𝙇 𝙂𝙍𝙐𝙋𝙊`)
-        else if (m.messageStubType == 26) await sendReply(`${m.messageStubParameters[0] == 'on' ? '❱❱ 𝙂𝙍𝙐𝙋𝙊 𝘾𝙀𝙍𝙍𝘼𝘿𝙊 ❰❰' : '❱❱ 𝙂𝙍𝙐𝙋𝙊 𝘼𝘽𝙄𝙀𝙍𝙏𝙊 ❰❰'}\n\n ${groupMetadata?.subject || 'Grupo'}\n 👤 *${usuario}*`)
-        else if (m.messageStubType == 29) await sendReply(`❱❱ 𝙁𝙀𝙇𝙄𝘾𝙄𝘿𝘼𝘿𝙀𝙎\n👤 *@${m.messageStubParameters[0].split('@')[0]}* \n» 𝘼𝙃𝙊𝙍𝘼 𝙀𝙎 𝘼𝘿𝙈𝙄𝙉.\n👤 *${usuario}*`, [m.sender, m.messageStubParameters[0]])
-        else if (m.messageStubType == 30) await sendReply(`❱❱ 𝙄𝙉𝙁𝙊𝙍𝙈𝘼𝘾𝙄𝙊́𝙉\n👤 *@${m.messageStubParameters[0].split('@')[0]}* \n» 𝙔𝘼 𝙉𝙊 𝙀𝙎 𝘼𝘿𝙈𝙄𝙉.\n👤 *${usuario}*`, [m.sender, m.messageStubParameters[0]])
+        if (m.messageStubType == 21) await sendReply(`${usuario} HA CAMBIADO EL NOMBRE DEL GRUPO A:\n\n*${m.messageStubParameters[0]}*`)
+        else if (m.messageStubType == 22) await sendReply(`${usuario} HA CAMBIADO LA FOTO DEL GRUPO`)
+        else if (m.messageStubType == 24) await sendReply(`${usuario} NUEVA DESCRIPCIÓN DEL GRUPO:\n\n${m.messageStubParameters[0]}`)
+        else if (m.messageStubType == 25) await sendReply(`🔒 AHORA *${m.messageStubParameters[0] == 'on' ? 'SOLO ADMINS' : 'TODOS'}* PUEDEN EDITAR LA INFORMACIÓN DEL GRUPO`)
+        else if (m.messageStubType == 26) await sendReply(`${m.messageStubParameters[0] == 'on' ? '❱❱ GRUPO CERRADO ❰❰' : '❱❱ GRUPO ABIERTO ❰❰'}\n\n ${groupMetadata?.subject || 'Grupo'}\n 👤 ${usuario}`)
+        else if (m.messageStubType == 29) {
+            const targetJid = m.messageStubParameters[0]
+            const targetName = await conn.getName(targetJid)
+            await sendReply(`❱❱ FELICIDADES\n👤 ${targetName}\nAHORA ES ADMIN.\n👤 ${usuario}`, [usuarioJid, targetJid])
+        } else if (m.messageStubType == 30) {
+            const targetJid = m.messageStubParameters[0]
+            const targetName = await conn.getName(targetJid)
+            await sendReply(`❱❱ INFORMACIÓN\n👤 ${targetName}\nYA NO ES ADMIN.\n👤 ${usuario}`, [usuarioJid, targetJid])
+        }
     }
 }
 

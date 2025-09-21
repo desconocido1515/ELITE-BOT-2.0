@@ -367,51 +367,61 @@ global.reloadHandler = async function(restatConn) {
   isInit = false;
   return true;
 };
-
+// CREAR SUBCARPETAS COPIAR DE AQUI
 const pluginFolder = global.__dirname(join(__dirname, './plugins/index'));
-const pluginFilter = (filename) => /\.js$/.test(filename);
 global.plugins = {};
-async function filesInit() {
-  for (const filename of readdirSync(pluginFolder).filter(pluginFilter)) {
-    try {
-      const file = global.__filename(join(pluginFolder, filename));
-      const module = await import(file);
-      global.plugins[filename] = module.default || module;
-    } catch (e) {
-      conn.logger.error(e);
-      delete global.plugins[filename];
+
+async function filesInit(folder) {
+  for (const filename of readdirSync(folder)) {
+    const fullPath = join(folder, filename);
+    if (statSync(fullPath).isDirectory()) {
+      await filesInit(fullPath);
+    } else {
+      try {
+        const file = global.__filename(fullPath);
+        const module = await import(file);
+        global.plugins[filename] = module.default || module;
+      } catch (e) {
+        conn.logger.error(e);
+        delete global.plugins[filename];
+      }
     }
   }
 }
-filesInit().then((_) => Object.keys(global.plugins)).catch(console.error);
 
+filesInit(pluginFolder).then(() => console.log(Object.keys(global.plugins))).catch(console.error);
+
+// Reload
 global.reload = async (_ev, filename) => {
-  if (pluginFilter(filename)) {
+  if (filename) {
     const dir = global.__filename(join(pluginFolder, filename), true);
     if (filename in global.plugins) {
-      if (existsSync(dir)) conn.logger.info(` updated plugin - '${filename}'`);
+      if (existsSync(dir)) conn.logger.info(`Updated plugin - '${filename}'`);
       else {
-        conn.logger.warn(`deleted plugin - '${filename}'`);
+        conn.logger.warn(`Deleted plugin - '${filename}'`);
         return delete global.plugins[filename];
       }
-    } else conn.logger.info(`new plugin - '${filename}'`);
+    } else conn.logger.info(`New plugin - '${filename}'`);
+    
     const err = syntaxerror(readFileSync(dir), filename, {
       sourceType: 'module',
       allowAwaitOutsideFunction: true,
     });
-    if (err) conn.logger.error(`syntax error while loading '${filename}'\n${format(err)}`);
+    
+    if (err) conn.logger.error(`Syntax error while loading '${filename}'\n${format(err)}`);
     else {
       try {
         const module = (await import(`${global.__filename(dir)}?update=${Date.now()}`));
         global.plugins[filename] = module.default || module;
       } catch (e) {
-        conn.logger.error(`error require plugin '${filename}\n${format(e)}'`);
+        conn.logger.error(`Error requiring plugin '${filename}\n${format(e)}'`);
       } finally {
         global.plugins = Object.fromEntries(Object.entries(global.plugins).sort(([a], [b]) => a.localeCompare(b)));
       }
     }
   }
 };
+// CREAR SUBCARPETAS COPIAR HASTA AQUI
 Object.freeze(global.reload);
 watch(pluginFolder, global.reload);
 await global.reloadHandler();

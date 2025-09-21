@@ -102,12 +102,14 @@ export async function before(m, { conn, groupMetadata }) {
           ? customWelcome.replace(/@user/gi, user).replace(/@group/gi, groupName).replace(/@desc/gi, groupDesc)
           : `🎉 *¡HOLA ${user}!* 🎉\n\nBienvenido/a a *${groupName}*.\n\n📚 *Sobre nosotros:*\n_${groupDesc}_\n\n🌟 ¡Esperamos que disfrutes tu estancia!`;
 
+        // Primero enviar imagen + texto
         await conn.sendMessage(m.chat, {
           image: imgBuffer,
           caption: welcomeText,
           mentions: [userJid]
         }, { quoted: fkontak });
 
+        // Después enviar audio de bienvenida
         await sendAudio(AUDIO_BIENVENIDA_URL);
       }
 
@@ -117,19 +119,20 @@ export async function before(m, { conn, groupMetadata }) {
           ? customBye.replace(/@user/gi, user).replace(/@group/gi, groupName)
           : `😂 *Te extrañaremos pendejo* 🖕🏻\n\nGracias por haber formado parte de *${groupName}*`;
 
-        // Elegir sticker o audio aleatorio
+        // Primero enviar imagen + texto
+        await conn.sendMessage(m.chat, {
+          image: imgBuffer,
+          caption: goodbyeText,
+          mentions: [userJid]
+        }, { quoted: fkontak });
+
+        // Después enviar sticker o audio aleatorio
         if (Math.random() < 0.5) {
           await sendSticker();
         } else {
           const audioUrl = AUDIO_SALIDA_URLS[Math.floor(Math.random() * AUDIO_SALIDA_URLS.length)];
           await sendAudio(audioUrl);
         }
-
-        await conn.sendMessage(m.chat, {
-          image: imgBuffer,
-          caption: goodbyeText,
-          mentions: [userJid]
-        }, { quoted: fkontak });
       }
 
       // EXPULSIÓN
@@ -138,19 +141,20 @@ export async function before(m, { conn, groupMetadata }) {
           ? customKick.replace(/@user/gi, user).replace(/@group/gi, groupName)
           : `😂 *Te extrañaremos pendejo* 🖕🏻\n\n*${user}* ha sido expulsado de *${groupName}*`;
 
-        // Elegir sticker o audio aleatorio
+        // Primero enviar imagen + texto
+        await conn.sendMessage(m.chat, {
+          image: imgBuffer,
+          caption: kickText,
+          mentions: [userJid]
+        }, { quoted: fkontak });
+
+        // Después enviar sticker o audio aleatorio
         if (Math.random() < 0.5) {
           await sendSticker();
         } else {
           const audioUrl = AUDIO_SALIDA_URLS[Math.floor(Math.random() * AUDIO_SALIDA_URLS.length)];
           await sendAudio(audioUrl);
         }
-
-        await conn.sendMessage(m.chat, {
-          image: imgBuffer,
-          caption: kickText,
-          mentions: [userJid]
-        }, { quoted: fkontak });
       }
     }, 2000);
 

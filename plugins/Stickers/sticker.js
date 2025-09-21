@@ -51,15 +51,7 @@ let handler = async (m, { conn, args, usedPrefix, command}) => {
       conn.sendFile(m.chat, stiker, 'sticker.webp', '', m, rcanal)
 } else {
       return conn.reply(m.chat,
-`╭─〔 🤖 *STICKER BOT* 🤖 〕─╮
-│
-│ ❌ No se pudo crear el sticker.
-│
-│ 📥 Asegúrate de enviar una imagen o video
-│     válido, o prueba con un enlace directo.
-│
-│ 📌 Si necesitas ayuda, usa *.menu*
-╰────────────────────────────╯`, m, fake)
+`¡𝘌𝘺 , 𝘳𝘦𝘴𝘱𝘰𝘯𝘥𝘦 𝘢 𝘶𝘯𝘢 𝘪𝘮𝘢𝘨𝘦𝘯!`, m, fake)
 }
 }
 }

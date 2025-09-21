@@ -86,7 +86,7 @@ export async function handler(chatUpdate) {
                 if (!('isBanned' in chat))
                     chat.isBanned = false
                 if (!('bienvenida' in chat))
-                    chat.bienvenida = false 
+                    chat.bienvenida = true 
                 if (!('antiLink' in chat))
                     chat.antiLink = false
                 if (!('antilinkxxx' in chat))
@@ -110,7 +110,7 @@ export async function handler(chatUpdate) {
             } else
                 global.db.data.chats[m.chat] = {
                     isBanned: false,
-                    bienvenida: false,
+                    bienvenida: true,
                     antiLink: false,
                     antilinkxxx: false,
                     detect: true,
@@ -126,18 +126,18 @@ export async function handler(chatUpdate) {
             if (typeof settings !== 'object') global.db.data.settings[this.user.jid] = {}
             if (settings) {
                 if (!('self' in settings)) settings.self = false
-                if (!('autoread' in settings)) settings.autoread = false
-                if (!('antiPrivate' in settings)) settings.antiPrivate = false
-                if (!('antiPrivate2' in settings)) settings.antiPrivate2 = false
-                if (!('antiBot' in settings)) settings.antiBot2 = false
+                if (!('autoread' in settings)) settings.autoread = true
+                if (!('antiPrivate' in settings)) settings.antiPrivate = true
+                if (!('antiPrivate2' in settings)) settings.antiPrivate2 = true
+                if (!('antiBot' in settings)) settings.antiBot2 = true
                 if (!('antiSpam' in settings)) settings.antiSpam = false
             } else global.db.data.settings[this.user.jid] = {
                 self: false,
-                autoread: false,
-                antiPrivate: false,
-                antiPrivate2: false,
+                autoread: true,
+                antiPrivate: true,
+                antiPrivate2: true,
                 antiBot: true,
-                antiSpam: true,
+                antiSpam: false,
                 status: 0
             }
         } catch (e) {
@@ -488,7 +488,7 @@ global.dfail = (type, m, conn, usedPrefix) => {
         private: " |𝐀𝐯𝐢𝐬𝐨|  _*`💬 𝐔𝐒𝐀 𝐄𝐋 𝐂𝐇𝐀𝐓 𝐏𝐑𝐈𝐕𝐀𝐃𝐎 𝐏𝐀𝐑𝐀 𝐄𝐒𝐓𝐄 𝐂𝐎𝐌𝐀𝐍𝐃𝐎⚡`*_",
         admin: "  |𝐀𝐯𝐢𝐬𝐨| _*`😂 𝐓𝐔 𝐍𝐎 𝐄𝐑𝐄𝐒 𝐀𝐃𝐌𝐈𝐍 😝⚡`*_",
         botAdmin: "  |𝐀𝐯𝐢𝐬𝐨| _*`⚠️ 𝗘𝘀 𝗻𝗲𝗰𝗲𝘀𝗮𝗿𝗶𝗼 𝗤𝘂𝗲 𝗦𝗲𝗮 𝗮𝗱𝗺𝗶𝗻 𝗣𝗥𝗜𝗠𝗘𝗥𝗢 𝗣𝗔𝗥𝗔 𝘂𝘀𝗮𝗿 𝗲𝘀𝘁𝗮 𝗳𝘂𝗻𝗰𝗶𝗼́𝗻⚡`*_",
-        unreg: " | 𝐀𝐯𝐢𝐬𝐨| *`↘️𝙐𝙎𝙐𝘼𝙍𝙄𝙊 𝙉𝙊 𝙍𝙀𝙂𝙄𝙎𝙏𝙍𝘼𝘿𝙊↘️`*_\n\n`Para Registrarse:`\n\n> .reg nombre.edad\n\n`Ejemplo:`\n\n> .reg Barboza.18",
+        unreg: " | 𝐀𝐯𝐢𝐬𝐨| *`↘️𝙐𝙎𝙐𝘼𝙍𝙄𝙊 𝙉𝙊 𝙍𝙀𝙂𝙄𝙎𝙏𝙍𝘼𝘿𝙊↘️`*_\n\n`Para Registrarse:`\n\n> .reg nombre.edad\n\n`",
         restrict: "> _*`Comando desactivado por mi Owner`*_" 
     }[type]
     if (msg) return conn.reply(m.chat, msg, m, rcanal).then(_ => m.react('✖️'))

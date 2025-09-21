@@ -7,18 +7,22 @@ const handler = m => m
 handler.before = async function (m, { conn, participants, groupMetadata }) {
     if (!m.messageStubType || !m.isGroup) return
     const chat = global.db.data.chats[m.chat]
+
+    // Obtener JID y nombre real del usuario que hizo la acción
     const usuarioJid = await resolveLidToRealJid(m?.sender, conn, m?.chat)
-    const usuario = await conn.getName(usuarioJid) // <- Nombre real del contacto
+    const usuarioName = await conn.getName(usuarioJid)
+
+    // Admins del grupo
     const groupAdmins = participants.filter(p => p.admin)
 
-    // fkontak para quotes
+    // fkontak para mensajes citados
     let fkontak = { 
         key: { participants:"0@s.whatsapp.net", remoteJid: "status@broadcast", fromMe: false, id: "Halo" }, 
         message: { contactMessage: { vcard: `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${m.sender.split('@')[0]}:${m.sender.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD` }},
         participant: "0@s.whatsapp.net" 
     }
 
-    // externalAdReply
+    // externalAdReply para todos los mensajes
     const externalAdReply = {
         title: "𐔌 . ⋮ ᗩ ᐯ I Տ O .ᐟ ֹ ₊ ꒱",
         body: "¡Bot activo!",
@@ -31,12 +35,9 @@ handler.before = async function (m, { conn, participants, groupMetadata }) {
         renderLargerThumbnail: false
     }
 
-    // Función para enviar mensajes con externalAdReply
+    // Función para enviar mensajes con mención y externalAdReply
     async function sendReply(text, mentions = [usuarioJid], image = null) {
-        const messageOptions = {
-            mentions,
-            contextInfo: { externalAdReply }
-        }
+        const messageOptions = { mentions, contextInfo: { externalAdReply } }
         if (image) messageOptions.image = { url: image }
         if (!image) messageOptions.text = text
         else messageOptions.caption = text
@@ -44,21 +45,49 @@ handler.before = async function (m, { conn, participants, groupMetadata }) {
         await conn.sendMessage(m.chat, messageOptions, { quoted: fkontak })
     }
 
-    if (chat.detect) {
-        if (m.messageStubType == 21) await sendReply(`${usuario} HA CAMBIADO EL NOMBRE DEL GRUPO A:\n\n*${m.messageStubParameters[0]}*`)
-        else if (m.messageStubType == 22) await sendReply(`${usuario} HA CAMBIADO LA FOTO DEL GRUPO`)
-        else if (m.messageStubType == 24) await sendReply(`${usuario} NUEVA DESCRIPCIÓN DEL GRUPO:\n\n${m.messageStubParameters[0]}`)
-        else if (m.messageStubType == 25) await sendReply(`🔒 AHORA *${m.messageStubParameters[0] == 'on' ? 'SOLO ADMINS' : 'TODOS'}* PUEDEN EDITAR LA INFORMACIÓN DEL GRUPO`)
-        else if (m.messageStubType == 26) await sendReply(`${m.messageStubParameters[0] == 'on' ? '❱❱ GRUPO CERRADO ❰❰' : '❱❱ GRUPO ABIERTO ❰❰'}\n\n ${groupMetadata?.subject || 'Grupo'}\n 👤 ${usuario}`)
-        else if (m.messageStubType == 29) {
+    if (!chat.detect) return
+
+    switch (m.messageStubType) {
+        case 21: // Cambio de nombre del grupo
+            await sendReply(`@${usuarioName} HA CAMBIADO EL NOMBRE DEL GRUPO A:\n\n*${m.messageStubParameters[0]}*`, [usuarioJid])
+            break
+        case 22: // Cambio de foto del grupo
+            await sendReply(`@${usuarioName} HA CAMBIADO LA FOTO DEL GRUPO`, [usuarioJid])
+            break
+        case 24: // Cambio de descripción
+            await sendReply(`@${usuarioName} NUEVA DESCRIPCIÓN DEL GRUPO:\n\n${m.messageStubParameters[0]}`, [usuarioJid])
+            break
+        case 25: // Restricción edición de info
+            await sendReply(`🔒 AHORA *${m.messageStubParameters[0] == 'on' ? 'SOLO ADMINS' : 'TODOS'}* PUEDEN EDITAR LA INFORMACIÓN DEL GRUPO\n\nAcción realizada por: @${usuarioName}`, [usuarioJid])
+            break
+        case 26: // Estado del grupo abierto/cerrado
+            await sendReply(`${m.messageStubParameters[0] == 'on' ? '❱❱ GRUPO CERRADO ❰❰' : '❱❱ GRUPO ABIERTO ❰❰'}\n\n${groupMetadata?.subject || 'Grupo'}\n👤 @${usuarioName}`, [usuarioJid])
+            break
+        case 29: { // Usuario hecho admin
             const targetJid = m.messageStubParameters[0]
             const targetName = await conn.getName(targetJid)
-            await sendReply(`❱❱ FELICIDADES\n👤 ${targetName}\nAHORA ES ADMIN.\n👤 ${usuario}`, [usuarioJid, targetJid])
-        } else if (m.messageStubType == 30) {
-            const targetJid = m.messageStubParameters[0]
-            const targetName = await conn.getName(targetJid)
-            await sendReply(`❱❱ INFORMACIÓN\n👤 ${targetName}\nYA NO ES ADMIN.\n👤 ${usuario}`, [usuarioJid, targetJid])
+            await sendReply(`❱❱ FELICIDADES\n👤 @${targetName}\nAHORA ES ADMIN.\n👤 @${usuarioName}`, [usuarioJid, targetJid])
+            break
         }
+        case 30: { // Usuario removido de admin
+            const targetJid = m.messageStubParameters[0]
+            const targetName = await conn.getName(targetJid)
+            await sendReply(`❱❱ INFORMACIÓN\n👤 @${targetName}\nYA NO ES ADMIN.\n👤 @${usuarioName}`, [usuarioJid, targetJid])
+            break
+        }
+        case 72: // Cambio de duración de mensajes temporales
+            await sendReply(`@${usuarioName} CAMBIÓ LA DURACIÓN DE LOS MENSAJES TEMPORALES A @${m.messageStubParameters[0]}`, [usuarioJid])
+            break
+        case 123: // Mensajes temporales desactivados
+            await sendReply(`@${usuarioName} DESACTIVÓ LOS MENSAJES TEMPORALES`, [usuarioJid])
+            break
+        default:
+            console.log({
+                messageStubType: m.messageStubType,
+                messageStubParameters: m.messageStubParameters,
+                type: WAMessageStubType[m.messageStubType],
+            })
+            break
     }
 }
 
@@ -66,8 +95,10 @@ export default handler
 
 async function resolveLidToRealJid(lid, conn, groupChatId, maxRetries = 3, retryDelay = 60000) {
     const inputJid = lid.toString()
-    if (!inputJid.endsWith("@lid") || !groupChatId?.endsWith("@g.us")) return inputJid.includes("@") ? inputJid : `${inputJid}@s.whatsapp.net`
+    if (!inputJid.endsWith("@lid") || !groupChatId?.endsWith("@g.us")) 
+        return inputJid.includes("@") ? inputJid : `${inputJid}@s.whatsapp.net`
     if (lidCache.has(inputJid)) return lidCache.get(inputJid)
+
     const lidToFind = inputJid.split("@")[0]
     let attempts = 0
     while (attempts < maxRetries) {

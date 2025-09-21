@@ -20,10 +20,9 @@ handler.before = async function (m, { conn, participants, groupMetadata, session
     const usuario = await resolveLidToRealJid(m?.sender, conn, m?.chat)
     const groupAdmins = participants.filter(p => p.admin)
 
-    // Asegúrate de definir estas variables en algún lugar de tu código
-    const textbot = textbot || "Mensaje por defecto"
-    const icono = icono || "https://files.catbox.moe/xr2m6u.jpg"
-    const redes = redes || "https://turedes.com"
+    // Valores fijos para rcanal
+    const icono = "https://files.catbox.moe/xr2m6u.jpg"
+    const redes = "https://turedes.com"
 
     const rcanal = {
         contextInfo: {
@@ -35,7 +34,7 @@ handler.before = async function (m, { conn, participants, groupMetadata, session
             },
             externalAdReply: {
                 title: "𐔌 . ⋮ ᗩ ᐯ I Տ O .ᐟ ֹ ₊ ꒱",
-                body: textbot,
+                body: "", // ya no usamos textbot
                 mediaUrl: null,
                 description: null,
                 previewType: "PHOTO",
@@ -48,7 +47,7 @@ handler.before = async function (m, { conn, participants, groupMetadata, session
         }
     }
 
-    const pp = await conn.profilePictureUrl(m.chat, 'image').catch(_ => null) || 'https://files.catbox.moe/xr2m6u.jpg'
+    const pp = await conn.profilePictureUrl(m.chat, 'image').catch(_ => null) || icono
 
     const nombre = `> ❀ @${usuario.split('@')[0]} Ha cambiado el nombre del grupo.\n> ✦ Ahora el grupo se llama:\n> *${m.messageStubParameters[0]}*.`
     const foto = `> ❀ Se ha cambiado la imagen del grupo.\n> ✦ Acción hecha por:\n> » @${usuario.split('@')[0]}`

@@ -10,20 +10,111 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isR
     case 'welcome':
     case 'bv':
     case 'bienvenida':
-      if (!m.isGroup) {
-        if (!isOwner) {
-          global.dfail('group', m, conn);
-          throw false;
-        }
-      } else if (!isAdmin) {
-        global.dfail('admin', m, conn);
-        throw false;
-      }
+      if (!m.isGroup && !isOwner) return global.dfail('group', m, conn);
+      if (m.isGroup && !isAdmin) return global.dfail('admin', m, conn);
       chat.bienvenida = isEnable;
       break;
 
-    // Aquí van los demás casos según tu código original...
-    // ...manteniendo toda la lógica que ya tenías
+    case 'antiprivado2':
+      if (!m.isGroup && !isOwner) return global.dfail('group', m, conn);
+      if (m.isGroup && !isAdmin) return global.dfail('admin', m, conn);
+      chat.antiPrivate2 = isEnable;
+      break;
+
+    case 'antilag':
+      chat.antiLag = isEnable;
+      m.reply(`✅ Modo Anti-Lag ${isEnable? 'activado': 'desactivado'} correctamente.`);
+      break;
+
+    case 'autoread':
+    case 'autoleer':
+      isAll = true;
+      if (!isROwner) return global.dfail('rowner', m, conn);
+      global.opts['autoread'] = isEnable;
+      break;
+
+    case 'antispam':
+      isAll = true;
+      if (!isOwner) return global.dfail('owner', m, conn);
+      bot.antiSpam = isEnable;
+      break;
+
+    case 'antinopor':
+      isAll = true;
+      if (!isOwner) return global.dfail('owner', m, conn);
+      chat.antiLinkxxx = isEnable;
+      break;
+
+    case 'audios':
+    case 'audiosbot':
+    case 'botaudios':
+      if (!m.isGroup && !isOwner) return global.dfail('group', m, conn);
+      if (m.isGroup && !isAdmin) return global.dfail('admin', m, conn);
+      chat.audios = isEnable;
+      break;
+
+    case 'detect':
+    case 'avisos':
+      if (!m.isGroup && !isOwner) return global.dfail('group', m, conn);
+      if (m.isGroup && !isAdmin) return global.dfail('admin', m, conn);
+      chat.detect = isEnable;
+      break;
+
+    case 'jadibotmd':
+    case 'serbot':
+    case 'subbots':
+      isAll = true;
+      if (!isOwner) return global.dfail('rowner', m, conn);
+      bot.jadibotmd = isEnable;
+      break;
+
+    case 'restrict':
+    case 'restringir':
+      isAll = true;
+      if (!isOwner) return global.dfail('rowner', m, conn);
+      bot.restrict = isEnable;
+      break;
+
+    case 'document':
+    case 'documento':
+      isUser = true;
+      user.useDocument = isEnable;
+      break;
+
+    case 'antilink':
+      if (m.isGroup && !(isAdmin || isOwner)) return global.dfail('admin', m, conn);
+      chat.antiLink = isEnable;
+      break;
+
+    case 'antibot':
+      if (m.isGroup && !(isAdmin || isOwner)) return global.dfail('admin', m, conn);
+      chat.antiBot = isEnable;
+      break;
+
+    case 'modoadmin':
+    case 'soloadmin':
+    case 'modeadmin':
+      if (m.isGroup && !(isAdmin || isOwner)) return global.dfail('admin', m, conn);
+      chat.modoadmin = isEnable;
+      break;
+
+    case 'antiprivado':
+      bot.antiPrivate = isEnable;
+      break;
+
+    case 'nsfw':
+    case 'modohorny':
+      if (m.isGroup && !(isAdmin || isOwner)) return global.dfail('admin', m, conn);
+      chat.nsfw = isEnable;
+      break;
+
+    case 'antiarabes':
+    case 'antinegros':
+    case 'antifakes':
+    case 'onlylatinos':
+      if (m.isGroup && !(isAdmin || isOwner)) return global.dfail('admin', m, conn);
+      chat.onlyLatinos = isEnable;
+      break;
 
     default:
       if (!/[01]/.test(command)) return m.reply(`
@@ -41,28 +132,24 @@ usar los comandos :
       throw false
   }
 
-  // Texto adaptado al estilo que pasaste
-  let replyText = '';
-
-  if (isAll) {
-    replyText = `
+  // Aquí ponemos los textos bonitos según el ámbito
+  let replyText = isAll
+    ? `
 ❱❱ 𝙀𝙇𝙄𝙏𝙀 𝘽𝙊𝙏 𝙂𝙇𝙊𝘽𝘼𝙇 ❰❰
 
 ⚙️ 𝙁𝙐𝙉𝘾𝙄𝙊́𝙉 | ${type} 
 ⚙️ 𝙀𝙎𝙏𝘼𝘿𝙊 | ${isEnable ? '𝘼𝘾𝙏𝙄𝙑𝘼𝘿𝙊' : '𝘿𝙀𝙎𝘼𝘾𝙏𝙄𝙑𝘼𝘿𝙊'} 
 ⚙️ 𝙀𝙉 𝙀𝙎𝙏𝙀 | 𝘽𝙊𝙏
 ❰❰ 𝙀𝙇𝙄𝙏𝙀 𝘽𝙊𝙏 𝙂𝙇𝙊𝘽𝘼𝙇 ❱❱
-`.trim();
-  } else {
-    replyText = `
+`
+    : `
 ❱❱ 𝙀𝙇𝙄𝙏𝙀 𝘽𝙊𝙏 𝙂𝙇𝙊𝘽𝘼𝙇 ❰❰
 
 ⚙️ 𝙁𝙐𝙉𝘾𝙄𝙊́𝙉 | ${type} 
-⚙️ 𝙀𝙎𝙏𝘼𝘿𝙊 | ${isEnable ? '𝘼𝘾𝙏𝙄𝙑𝘼𝘿𝙊' : '𝘿𝙀𝙎𝘼𝘾𝙏𝙄𝙑𝘼𝘿𝙊'} 
+⚙️ 𝙀𝙎𝙏𝘼𝘿𝙊 | ${isEnable ? '𝘼𝘾𝙏𝙄𝙑𝘼𝘿𝙊' : '𝘿𝙀𝙎𝘼𝘾𝙏𝙄𝙑𝘿𝙊'} 
 ⚙️ 𝙀𝙉 𝙀𝙎𝙏𝙀 | 𝙂𝙍𝙐𝙋𝙊
 ❰❰ 𝙀𝙇𝙄𝙏𝙀 𝘽𝙊𝙏 𝙂𝙇𝙊𝘽𝘼𝙇 ❱❱
-`.trim();
-  }
+`;
 
   m.reply(replyText);
 }

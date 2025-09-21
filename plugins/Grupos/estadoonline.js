@@ -3,7 +3,7 @@ let handler = async (m, { conn, isRowner }) => {
     let _muptime;
     let totalreg = Object.keys(global.db.data.users).length;
     let totalchats = Object.keys(global.db.data.chats).length;
-    let pp = 'https://cdn-sunflareteam.vercel.app/images/fe2072569a.jpg'; 
+    let pp = 'https://d.uguu.se/cphaDbUX.jpg'; 
 
     if (process.send) {
       process.send('uptime');
@@ -18,15 +18,13 @@ let handler = async (m, { conn, isRowner }) => {
     const groupsIn = chats.filter(([id]) => id.endsWith('@g.us'));
     // const used = process.memoryUsage(); // no lo usas aquí
 
-    let Sisked = `╭─⬣「 *Estado De sᥲsᥙkᥱ ᑲ᥆𝗍 mძ 🌀* 」⬣\n`;
-    Sisked += `│ 👤 *Creador ∙* Barboza\n`;
-    Sisked += `│ 💎 *Grupos Unidos ∙* ${groupsIn.length}\n`;
-    Sisked += `│ 💨 *Chats Privados ∙* ${chats.length - groupsIn.length}\n`;
-    Sisked += `│ 🪙 *Total De Chats ∙* ${chats.length}\n`;
-    Sisked += `│ 💰 *Usuarios Registrados ∙* ${totalreg}\n`;
-    Sisked += `│ 🪄 *Grupos Registrados ∙* ${totalchats}\n`;
-    Sisked += `│ 💸 *Actividad ∙* ${muptime}\n`;
-    Sisked += `╰─⬣`;
+    let Sisked = `╭━━━━━━━━━━━━━━✠
+┃  *» Buen día mi creador*
+┃    *Kevv* 
+┃
+┃ 〽️ Estoy activo desde: ${muptime}
+┃  
+╰━ 𝗘𝗹𝗶𝘁𝗲𝗕𝗼𝘁𝗚𝗹𝗼𝗯𝗮𝗹`;
 
     await conn.sendFile(m.chat, pp, 'nino.jpg', Sisked, m); // uso `m` en lugar de fkontak por si no está definido
   } catch (e) {

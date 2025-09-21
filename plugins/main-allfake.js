@@ -47,8 +47,8 @@ var handler = async function (m, conn, db) {
 
     // Lista de canales
     let canalIdM = [
-        "120363414007802886@newsletter",
-        "120363414007802886@newsletter"
+        "120363346429264411@newsletter",
+        "120363346429264411@newsletter"
     ]
     let canalNombreM = [
         "sá¥²sá¥™ká¥± á‘²á¥†ð— máƒ« ðŸŒ€",
@@ -121,7 +121,7 @@ var handler = async function (m, conn, db) {
                 body: '🚀 ♡↝Barboza𝐐𐑂𐐲',
                 previewType: "PHOTO",
                 thumbnailUrl: "https://qu.ax/QGAVS.jpg",
-                sourceUrl: "https://whatsapp.com/channel/0029Vaua0ZD3gvWjQaIpSy18",
+                sourceUrl: "https://whatsapp.com/channel/0029VasDCR97dmeWOvPNlY45",
                 mediaType: 1,
                 renderLargerThumbnail: false
             }

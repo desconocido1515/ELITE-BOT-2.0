@@ -1,16 +1,12 @@
 import fs, { promises } from 'fs'
 import fetch from 'node-fetch'
+
 let handler = async (m, { conn, usedPrefix, command }) => {
 try {
 let d = new Date(new Date + 3600000)
 let locale = 'es'
 let week = d.toLocaleDateString(locale, { weekday: 'long' })
 let date = d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })
-let time = d.toLocaleTimeString(locale, {
-hour: 'numeric',
-minute: 'numeric',
-second: 'numeric'
-})
 let _uptime = process.uptime() * 1000
 let uptime = clockString(_uptime)
 let rtotalreg = Object.values(global.db.data.users).filter(user => user.registered == true).length 
@@ -18,15 +14,22 @@ let more = String.fromCharCode(8206)
 let readMore = more.repeat(850)   
 let taguser = conn.getName(m.sender)
 let user = global.db.data.users[m.sender]
-let fkontak = { "key": { "participants":"0@s.whatsapp.net", "remoteJid": "status@broadcast", "fromMe": false, "id": "Halo" }, "message": { "contactMessage": { "vcard": `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${m.sender.split('@')[0]}:${m.sender.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD` }}, "participant": "0@s.whatsapp.net" }
-const lugarFecha = moment().tz('America/Lima')
-const formatoFecha = {
-weekdays: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
-months: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+
+let fkontak = { 
+  "key": { 
+    "participants":"0@s.whatsapp.net", 
+    "remoteJid": "status@broadcast", 
+    "fromMe": false, 
+    "id": "Halo" 
+  }, 
+  "message": { 
+    "contactMessage": { 
+      "vcard": `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${m.sender.split('@')[0]}:${m.sender.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD` 
+    }
+  }, 
+  "participant": "0@s.whatsapp.net" 
 }
-lugarFecha.locale('es', formatoFecha)
-const horarioFecha = lugarFecha.format('dddd,DD [de] MMMM [del] YYYY│[Hora:]HH:mm A').replace(/^\w/, (c) => c.toUpperCase())
-m.react('🔰')
+
 let menu = `
 *¡Hola!* ⭐ @${m.sender.split("@")[0]}
 
@@ -546,7 +549,7 @@ let menu = `
 ┃🩻➺ .𝘵𝘰𝘵𝘢𝘭𝘧𝘶𝘯𝘤𝘪𝘰𝘯𝘦𝘴
 ┃🩻➺ .𝘶𝘯𝘣𝘢𝘯𝘤𝘩𝘢𝘵
 ╰━━━━━━⋆★⋆━━━━━━⬣
- `.trim()
+`.trim()
     
 const vi = ['https://files.catbox.moe/rwgvem.mp4']
 
@@ -554,26 +557,28 @@ try {
 await conn.sendMessage(m.chat, { video: { url: vi.getRandom() }, gifPlayback: true, caption: menu, mentions: [m.sender, global.conn.user.jid] }, { quoted: fkontak }) 
 } catch (error) {
 try {
-await conn.sendMessage(m.chat, { image: { url: gataMenu.getRandom() }, gifPlayback: false, caption: menu, mentions: [m.sender, global.conn.user.jid] }, { quoted: fkontak }) 
+await conn.sendMessage(m.chat, { image: { url: gataMenu.getRandom() }, caption: menu, mentions: [m.sender, global.conn.user.jid] }, { quoted: fkontak }) 
 } catch (error) {
 try {
-await conn.sendMessage(m.chat, { image: gataImg.getRandom(), gifPlayback: false, caption: menu, mentions: [m.sender, global.conn.user.jid] }, { quoted: fkontak }) 
+await conn.sendMessage(m.chat, { image: gataImg.getRandom(), caption: menu, mentions: [m.sender, global.conn.user.jid] }, { quoted: fkontak }) 
 } catch (error) {
-try{
+try {
 await conn.sendFile(m.chat, imagen5, 'menu.jpg', menu, fkontak, false, { mentions: [m.sender, global.conn.user.jid] })
 } catch (error) {
 return 
 }}}} 
 
 } catch (e) {
-await m.reply(lenguajeGB['smsMalError3']() + '\n*' + lenguajeGB.smsMensError1() + '*\n*' + usedPrefix + `${lenguajeGB.lenguaje() == 'es' ? 'reporte' : 'report'}` + '* ' + `${lenguajeGB.smsMensError2()} ` + usedPrefix + command)
-console.log(`❗❗ ${lenguajeGB['smsMensError2']()} ${usedPrefix + command} ❗❗`)
-console.log(e)}}
+await m.reply('❗ Ocurrió un error al mostrar el menú.')
+console.log(e)
+}}
 
-handler.customPrefix = /menu|comandos/i 
-handler.command = new RegExp
+handler.help = ['menu', 'comandos']
+handler.tags = ['main']
+handler.command = /^(menu|comandos|comando|menú)$/i   // Solo responde con punto (.)
 handler.exp = 0
-export default handler;   
+
+export default handler    
 
 function clockString(ms) {
 let h = isNaN(ms) ? '--' : Math.floor(ms / 3600000)

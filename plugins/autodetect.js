@@ -1,10 +1,6 @@
 let WAMessageStubType = (await import('@whiskeysockets/baileys')).default
-import chalk from 'chalk'
-import fs from 'fs'
-import path from 'path'
 import fetch from 'node-fetch'
 
-const groupMetadataCache = new Map()
 const lidCache = new Map()
 const handler = m => m
 
@@ -42,8 +38,10 @@ handler.before = async function (m, { conn, participants, groupMetadata }) {
             contextInfo: { externalAdReply }
         }
         if (image) messageOptions.image = { url: image }
-        messageOptions.text = text
-        await this.sendMessage(m.chat, messageOptions, { quoted: fkontak })
+        if (!image) messageOptions.text = text
+        else messageOptions.caption = text
+
+        await conn.sendMessage(m.chat, messageOptions, { quoted: fkontak })
     }
 
     if (chat.detect) {
@@ -51,11 +49,9 @@ handler.before = async function (m, { conn, participants, groupMetadata }) {
         else if (m.messageStubType == 22) await sendReply(`@${usuario.split('@')[0]} 𝙃𝘼𝙎 𝘾𝘼𝙈𝘽𝙄𝘼𝘿𝙊 𝙇𝘼𝙎 𝙁𝙊𝙏𝙊 𝘿𝙀𝙇 𝙂𝙍𝙐𝙋𝙊`)
         else if (m.messageStubType == 24) await sendReply(`@${usuario.split('@')[0]} 𝙉𝙐𝙀𝙑𝘼 𝘿𝙀𝙎𝘾𝙍𝙄𝙋𝘾𝙄𝙊𝙉 𝘿𝙀𝙇 𝙂𝙍𝙐𝙋𝙊 𝙀𝙎:\n\n${m.messageStubParameters[0]}`)
         else if (m.messageStubType == 25) await sendReply(`🔒 𝘼𝙃𝙊𝙍𝘼 *${m.messageStubParameters[0] == 'on' ? '𝙎𝙊𝙇𝙊 𝘼𝘿𝙈𝙄𝙉𝙎' : '𝙏𝙊𝘿𝙊𝙎'}* 𝙋𝙐𝙀𝘿𝙀 𝙀𝘿𝙄𝙏𝘼𝙍 𝙇𝘼 𝙄𝙉𝙁𝙊𝙍𝙈𝘼𝘾𝙄𝙊𝙉 𝘿𝙀𝙇 𝙂𝙍𝙐𝙋𝙊`)
-        else if (m.messageStubType == 26) await sendReply(`${m.messageStubParameters[0] == 'on' ? '❱❱ 𝙂𝙍𝙐𝙋𝙊 𝘾𝙀𝙍𝙍𝘼𝘿𝙊 ❰❰' : '❱❱ 𝙂𝙍𝙐𝙋𝙊 𝘼𝘽𝙄𝙀𝙍𝙏𝙊 ❰❰'}\n\n ${groupMetadata?.subject || 'Grupo'}\n ${m.messageStubParameters[0] == 'on' ? '» 𝙄𝙉𝙃𝘼𝘽𝙄𝙇𝙄𝙏𝘼𝘿𝙊 𝙋𝙊𝙍:'  : '» 𝙃𝘼𝘽𝙄𝙇𝙄𝙏𝘼𝘿𝙊 𝙋𝙊𝙍:'} *${usuario}*\n\n ${m.messageStubParameters[0] == 'on' ?'» 𝙉𝘼𝘿𝙄𝙀 𝙋𝙐𝙀𝘿𝙀 𝙀𝙎𝘾𝙍𝙄𝘽𝙄𝙍 𝙀𝙉 𝙀𝙇 𝙂𝙍𝙐𝙋𝙊.' :'» 𝙏𝙊𝘿𝙊𝙎 𝙋𝙐𝙀𝘿𝙀𝙉 𝙀𝙎𝘾𝙍𝙄𝘽𝙄𝙍 𝙀𝙉 𝙀𝙇 𝙂𝙍𝙐𝙋𝙊.'}`)
-        else if (m.messageStubType == 29) await sendReply(`❱❱ 𝙁𝙀𝙇𝙄𝘾𝙄𝘿𝘼𝘿𝙀𝙎 ❰❰\n\n👤 *@${m.messageStubParameters[0].split('@')[0]}* \n» 𝘼𝙃𝙊𝙍𝘼 𝙀𝙎 𝘼𝘿𝙈𝙄𝙉.\n\n» 𝘼𝘾𝘾𝙄𝙊́𝙉 𝙍𝙀𝘼𝙇𝙄𝙕𝘼𝘿𝘼 𝙋𝙊𝙍: \n👤 *${usuario}*`, [m.sender, m.messageStubParameters[0]])
-        else if (m.messageStubType == 30) await sendReply(`❱❱ 𝙄𝙉𝙁𝙊𝙍𝙈𝘼𝘾𝙄𝙊́𝙉 ❰❰\n\n👤 *@${m.messageStubParameters[0].split('@')[0]}* \n» 𝙔𝘼 𝙉𝙊 𝙀𝙎 𝘼𝘿𝙈𝙄𝙉.\n\n» 𝘼𝘾𝘾𝙄𝙊́𝙉 𝙍𝙀𝘼𝙇𝙄𝙕𝘼𝘿𝘼 𝙋𝙊𝙍:\n👤 *${usuario}*`, [m.sender, m.messageStubParameters[0]])
-        else if (m.messageStubType == 72) await sendReply(`${usuario} 𝘾𝘼𝙈𝘽𝙄𝙊 𝙇𝘼𝙎 𝘿𝙐𝙍𝘼𝘾𝙄𝙊𝙉 𝘿𝙀𝙇 𝙇𝙊𝙎 𝙈𝙀𝙉𝙎𝘼𝙅𝙀 𝙏𝙀𝙈𝙋𝙊𝙍𝘼𝙇𝙀𝙎 𝘼 *@${m.messageStubParameters[0]}*`)
-        else if (m.messageStubType == 123) await sendReply(`${usuario} *𝘿𝙀𝙎𝘼𝘾𝙏𝙄𝙑𝙊́* 𝙇𝙊𝙎 𝙈𝙀𝙉𝙎𝘼𝙅𝙀 𝙏𝙀𝙈𝙋𝙊𝙍𝘼𝙇.`)
+        else if (m.messageStubType == 26) await sendReply(`${m.messageStubParameters[0] == 'on' ? '❱❱ 𝙂𝙍𝙐𝙋𝙊 𝘾𝙀𝙍𝙍𝘼𝘿𝙊 ❰❰' : '❱❱ 𝙂𝙍𝙐𝙋𝙊 𝘼𝘽𝙄𝙀𝙍𝙏𝙊 ❰❰'}\n\n ${groupMetadata?.subject || 'Grupo'}\n 👤 *${usuario}*`)
+        else if (m.messageStubType == 29) await sendReply(`❱❱ 𝙁𝙀𝙇𝙄𝘾𝙄𝘿𝘼𝘿𝙀𝙎\n👤 *@${m.messageStubParameters[0].split('@')[0]}* \n» 𝘼𝙃𝙊𝙍𝘼 𝙀𝙎 𝘼𝘿𝙈𝙄𝙉.\n👤 *${usuario}*`, [m.sender, m.messageStubParameters[0]])
+        else if (m.messageStubType == 30) await sendReply(`❱❱ 𝙄𝙉𝙁𝙊𝙍𝙈𝘼𝘾𝙄𝙊́𝙉\n👤 *@${m.messageStubParameters[0].split('@')[0]}* \n» 𝙔𝘼 𝙉𝙊 𝙀𝙎 𝘼𝘿𝙈𝙄𝙉.\n👤 *${usuario}*`, [m.sender, m.messageStubParameters[0]])
     }
 }
 
@@ -63,14 +59,14 @@ export default handler
 
 async function resolveLidToRealJid(lid, conn, groupChatId, maxRetries = 3, retryDelay = 60000) {
     const inputJid = lid.toString()
-    if (!inputJid.endsWith("@lid") || !groupChatId?.endsWith("@g.us")) { return inputJid.includes("@") ? inputJid : `${inputJid}@s.whatsapp.net` }
-    if (lidCache.has(inputJid)) { return lidCache.get(inputJid) }
+    if (!inputJid.endsWith("@lid") || !groupChatId?.endsWith("@g.us")) return inputJid.includes("@") ? inputJid : `${inputJid}@s.whatsapp.net`
+    if (lidCache.has(inputJid)) return lidCache.get(inputJid)
     const lidToFind = inputJid.split("@")[0]
     let attempts = 0
     while (attempts < maxRetries) {
         try {
             const metadata = await conn?.groupMetadata(groupChatId)
-            if (!metadata?.participants) { throw new Error("No se obtuvieron participantes") }
+            if (!metadata?.participants) throw new Error("No se obtuvieron participantes")
             for (const participant of metadata.participants) {
                 try {
                     if (!participant?.jid) continue

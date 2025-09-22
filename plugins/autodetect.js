@@ -50,6 +50,20 @@ handler.before = async function (m, { conn, participants, groupMetadata}) {
     let admingp = `❱❱ 𝙁𝙀𝙇𝙄𝘾𝙄𝘿𝘼𝘿𝙀𝙎 ❰❰\n\n👤 @${m.messageStubParameters[0].split`@`[0]}\n» 𝘼𝙃𝙊𝙍𝘼 𝙀𝙎 𝘼𝘿𝙈𝙄𝙉.\n\n» 𝘼𝘾𝘾𝙄𝙊́𝙉 𝙍𝙀𝘼𝙇𝙄𝙕𝘼𝘿𝘼 𝙋𝙊𝙍:\n${usuario}`
     let noadmingp = `❱❱ 𝙄𝙉𝙁𝙊𝙍𝙈𝘼𝘾𝙄𝙊́𝙉 ❰❰\n\n👤 @${m.messageStubParameters[0].split`@`[0]}\n» 𝙔𝘼 𝙉𝙊 𝙀𝙎 𝘼𝘿𝙈𝙄𝙉.\n\n» 𝘼𝘾𝘾𝙄𝙊́𝙉 𝙍𝙀𝘼𝙇𝙄𝙕𝘼𝘿𝘼 𝙋𝙊𝙍:\n${usuario}`
 
+if (chat.detect && m.messageStubType == 2) {
+const uniqid = (m.isGroup ? m.chat : m.sender).split('@')[0]
+const sessionPath = './GataBotSession/'
+for (const file of await fs.readdir(sessionPath)) {
+if (file.includes(uniqid)) {
+await fs.unlink(path.join(sessionPath, file))
+console.log(
+`${chalk.yellow.bold('[ ⚠️ Archivo Eliminado ]')} ${chalk.greenBright(`'${file}'`)}\n` +
+`${chalk.blue('(Session PreKey)')} ${chalk.redBright('que provoca el "undefined" en el chat')}`
+)
+}
+}
+
+    
     if (chat.detect && m.messageStubType == 21) {
         await this.sendMessage(m.chat, { text: nombre, mentions: [m.sender]}, { quoted: fkontak})
 } else if (chat.detect && m.messageStubType == 22) {

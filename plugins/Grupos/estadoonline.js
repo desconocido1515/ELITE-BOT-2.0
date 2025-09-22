@@ -3,7 +3,7 @@ let handler = async (m, { conn, isRowner }) => {
     let _muptime;
     let totalreg = Object.keys(global.db.data.users).length;
     let totalchats = Object.keys(global.db.data.chats).length;
-    let pp = 'https://d.uguu.se/cphaDbUX.jpg'; 
+    let pp = 'https://files.catbox.moe/x0f7qi.jpg'; 
 
     if (process.send) {
       process.send('uptime');

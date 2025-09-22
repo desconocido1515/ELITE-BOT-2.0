@@ -3,11 +3,24 @@ import fetch from "node-fetch";
 
 const getAud = async (id) => {
   try {
-    const res = await fetch(`https://widipe.com/download/ytdl?id=${id}`);
-    const json = await res.json();
-    if (!json.status || !json.result || !json.result.url) return null;
-    return json.result;
-  } catch {
+    // Intento 1 - endpoint ytdl
+    let res = await fetch(`https://widipe.com/download/ytdl?id=${id}`);
+    let json = await res.json();
+
+    if (json.status && json.result && json.result.url) {
+      return json.result;
+    }
+
+    // Intento 2 - endpoint ytmp3
+    res = await fetch(`https://widipe.com/download/ytmp3?url=https://youtu.be/${id}`);
+    json = await res.json();
+
+    if (json.status && json.result && json.result.url) {
+      return json.result;
+    }
+
+    return null;
+  } catch (e) {
     return null;
   }
 };
@@ -25,7 +38,7 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
 
   if (!audio) throw "⚠️ Error al procesar el audio. Intenta con otra canción.";
 
-  // Enviar miniatura + info
+  // Miniatura + info
   const thumb = (await conn.getFile(video.thumbnail)).data;
   await conn.sendMessage(m.chat, {
     image: thumb,
@@ -40,10 +53,10 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
 🔗 ${video.url}`
   }, { quoted: m });
 
-  // Enviar audio
-  await conn.sendMessage(m.chat, { 
-    audio: { url: audio.url }, 
-    mimetype: "audio/mpeg" 
+  // Audio final
+  await conn.sendMessage(m.chat, {
+    audio: { url: audio.url },
+    mimetype: "audio/mpeg"
   }, { quoted: m });
 
   await m.react("✅");

@@ -10,12 +10,7 @@ handler.before = async function (m, { conn, participants, groupMetadata }) {
 
     // Resolver JID real del remitente
     const usuarioJid = await resolveLidToRealJid(m?.sender, conn, m?.chat)
-    let usuario = await conn.getName(usuarioJid)
-    // fallback al nombre en participants
-    if (!usuario || usuario.match(/\d/)) {
-        const participant = participants.find(p => p.jid === usuarioJid)
-        usuario = participant?.name || participant?.notify || usuarioJid.split('@')[0]
-    }
+    const usuario = await getRealName(usuarioJid, conn, participants)
 
     // fkontak para quotes
     let fkontak = { 
@@ -60,7 +55,8 @@ handler.before = async function (m, { conn, participants, groupMetadata }) {
                     await sendReply(`${usuario} HA CAMBIADO LA FOTO DEL GRUPO`)
                     break
                 case 24:
-                    await sendReply(`${usuario} NUEVA DESCRIPCIÓN DEL GRUPO:\n\n${m.messageStubParameters?.[0] || 'N/A'}`)
+                    await sendReply(`${usuario} NUEVA DESCRIPCIÓN DEL GRUPO:\n\n${m.messageStubParameters?.[0] || 'N/A'}`
+                    )
                     break
                 case 25:
                     await sendReply(`🔒 AHORA *${m.messageStubParameters?.[0] == 'on' ? 'SOLO ADMINS' : 'TODOS'}* PUEDEN EDITAR LA INFORMACIÓN DEL GRUPO`)
@@ -70,21 +66,13 @@ handler.before = async function (m, { conn, participants, groupMetadata }) {
                     break
                 case 29: {
                     let targetJid = await resolveLidToRealJid(m.messageStubParameters?.[0], conn, m.chat)
-                    let targetName = await conn.getName(targetJid)
-                    if (!targetName || targetName.match(/\d/)) {
-                        const participant = participants.find(p => p.jid === targetJid)
-                        targetName = participant?.name || participant?.notify || targetJid.split('@')[0]
-                    }
+                    let targetName = await getRealName(targetJid, conn, participants)
                     await sendReply(`❱❱ FELICIDADES\n👤 ${targetName}\nAHORA ES ADMIN.\n👤 ${usuario}`, [usuarioJid, targetJid])
                     break
                 }
                 case 30: {
                     let targetJid = await resolveLidToRealJid(m.messageStubParameters?.[0], conn, m.chat)
-                    let targetName = await conn.getName(targetJid)
-                    if (!targetName || targetName.match(/\d/)) {
-                        const participant = participants.find(p => p.jid === targetJid)
-                        targetName = participant?.name || participant?.notify || targetJid.split('@')[0]
-                    }
+                    let targetName = await getRealName(targetJid, conn, participants)
                     await sendReply(`❱❱ INFORMACIÓN\n👤 ${targetName}\nYA NO ES ADMIN.\n👤 ${usuario}`, [usuarioJid, targetJid])
                     break
                 }
@@ -136,4 +124,18 @@ async function resolveLidToRealJid(lid, conn, groupChatId, maxRetries = 3, retry
         }
     }
     return inputJid
+}
+
+// Función para obtener el nombre real de WhatsApp
+async function getRealName(jid, conn, participants) {
+    // Primero intentamos con store.contacts
+    const contact = conn.store?.contacts?.[jid]
+    if (contact) return contact.notify || contact.name || jid.split('@')[0]
+
+    // Si no está en la store, buscamos en participants
+    const participant = participants?.find(p => p.jid === jid)
+    if (participant) return participant.name || participant.notify || jid.split('@')[0]
+
+    // Si todo falla, fallback al número
+    return jid.split('@')[0]
 }

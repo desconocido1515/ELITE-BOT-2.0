@@ -1,5 +1,5 @@
-let WAMessageStubType = (await import('@whiskeysockets/baileys')).default
 import fetch from 'node-fetch'
+let WAMessageStubType = (await import('@whiskeysockets/baileys')).default
 
 const lidCache = new Map()
 const handler = m => m
@@ -7,8 +7,12 @@ const handler = m => m
 handler.before = async function (m, { conn, participants, groupMetadata }) {
     if (!m.messageStubType || !m.isGroup) return
     const chat = global.db.data.chats[m.chat]
+
+    // Resolver JID real del remitente
     const usuarioJid = await resolveLidToRealJid(m?.sender, conn, m?.chat)
-    const usuario = await conn.getName(usuarioJid) // <- Nombre real del contacto
+    const usuario = await conn.getName(usuarioJid)
+
+    // Admins del grupo
     const groupAdmins = participants.filter(p => p.admin)
 
     // fkontak para quotes
@@ -31,7 +35,7 @@ handler.before = async function (m, { conn, participants, groupMetadata }) {
         renderLargerThumbnail: false
     }
 
-    // Función para enviar mensajes con externalAdReply
+    // Función para enviar mensajes
     async function sendReply(text, mentions = [usuarioJid], image = null) {
         const messageOptions = {
             mentions,
@@ -45,30 +49,57 @@ handler.before = async function (m, { conn, participants, groupMetadata }) {
     }
 
     if (chat.detect) {
-        if (m.messageStubType == 21) await sendReply(`${usuario} HA CAMBIADO EL NOMBRE DEL GRUPO A:\n\n*${m.messageStubParameters[0]}*`)
-        else if (m.messageStubType == 22) await sendReply(`${usuario} HA CAMBIADO LA FOTO DEL GRUPO`)
-        else if (m.messageStubType == 24) await sendReply(`${usuario} NUEVA DESCRIPCIÓN DEL GRUPO:\n\n${m.messageStubParameters[0]}`)
-        else if (m.messageStubType == 25) await sendReply(`🔒 AHORA *${m.messageStubParameters[0] == 'on' ? 'SOLO ADMINS' : 'TODOS'}* PUEDEN EDITAR LA INFORMACIÓN DEL GRUPO`)
-        else if (m.messageStubType == 26) await sendReply(`${m.messageStubParameters[0] == 'on' ? '❱❱ GRUPO CERRADO ❰❰' : '❱❱ GRUPO ABIERTO ❰❰'}\n\n ${groupMetadata?.subject || 'Grupo'}\n 👤 ${usuario}`)
-        else if (m.messageStubType == 29) {
-            const targetJid = m.messageStubParameters[0]
-            const targetName = await conn.getName(targetJid)
-            await sendReply(`❱❱ FELICIDADES\n👤 ${targetName}\nAHORA ES ADMIN.\n👤 ${usuario}`, [usuarioJid, targetJid])
-        } else if (m.messageStubType == 30) {
-            const targetJid = m.messageStubParameters[0]
-            const targetName = await conn.getName(targetJid)
-            await sendReply(`❱❱ INFORMACIÓN\n👤 ${targetName}\nYA NO ES ADMIN.\n👤 ${usuario}`, [usuarioJid, targetJid])
+        try {
+            switch (m.messageStubType) {
+                case 21: // Cambio de nombre de grupo
+                    await sendReply(`${usuario} HA CAMBIADO EL NOMBRE DEL GRUPO A:\n\n*${m.messageStubParameters?.[0] || 'N/A'}*`)
+                    break
+                case 22: // Cambio de foto
+                    await sendReply(`${usuario} HA CAMBIADO LA FOTO DEL GRUPO`)
+                    break
+                case 24: // Cambio de descripción
+                    await sendReply(`${usuario} NUEVA DESCRIPCIÓN DEL GRUPO:\n\n${m.messageStubParameters?.[0] || 'N/A'}`)
+                    break
+                case 25: // Solo admins pueden editar info
+                    await sendReply(`🔒 AHORA *${m.messageStubParameters?.[0] == 'on' ? 'SOLO ADMINS' : 'TODOS'}* PUEDEN EDITAR LA INFORMACIÓN DEL GRUPO`)
+                    break
+                case 26: // Grupo cerrado o abierto
+                    await sendReply(`${m.messageStubParameters?.[0] == 'on' ? '❱❱ GRUPO CERRADO ❰❰' : '❱❱ GRUPO ABIERTO ❰❰'}\n\n ${groupMetadata?.subject || 'Grupo'}\n 👤 ${usuario}`)
+                    break
+                case 29: // Usuario se vuelve admin
+                    {
+                        let targetJid = await resolveLidToRealJid(m.messageStubParameters?.[0], conn, m.chat)
+                        const targetName = await conn.getName(targetJid)
+                        await sendReply(`❱❱ FELICIDADES\n👤 ${targetName}\nAHORA ES ADMIN.\n👤 ${usuario}`, [usuarioJid, targetJid])
+                    }
+                    break
+                case 30: // Usuario deja de ser admin
+                    {
+                        let targetJid = await resolveLidToRealJid(m.messageStubParameters?.[0], conn, m.chat)
+                        const targetName = await conn.getName(targetJid)
+                        await sendReply(`❱❱ INFORMACIÓN\n👤 ${targetName}\nYA NO ES ADMIN.\n👤 ${usuario}`, [usuarioJid, targetJid])
+                    }
+                    break
+                default:
+                    break
+            }
+        } catch (e) {
+            console.error('Error manejando stub:', e)
         }
     }
 }
 
 export default handler
 
+// Función para resolver LID a JID real
 async function resolveLidToRealJid(lid, conn, groupChatId, maxRetries = 3, retryDelay = 60000) {
     const inputJid = lid.toString()
-    if (!inputJid.endsWith("@lid") || !groupChatId?.endsWith("@g.us")) return inputJid.includes("@") ? inputJid : `${inputJid}@s.whatsapp.net`
+    if (!inputJid.endsWith("@lid") || !groupChatId?.endsWith("@g.us")) 
+        return inputJid.includes("@") ? inputJid : `${inputJid}@s.whatsapp.net`
+
     if (lidCache.has(inputJid)) return lidCache.get(inputJid)
     const lidToFind = inputJid.split("@")[0]
+
     let attempts = 0
     while (attempts < maxRetries) {
         try {

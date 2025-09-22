@@ -23,19 +23,7 @@ let handler = async (m, { conn }) => {
     txt += `*» Tamaño* : ${formatBytes(media.length)}\n`;
     txt += `*» Expiración* : ${isTele ? 'No expira' : 'Desconocido'}\n\n`;
     
-    await conn.sendMessage(m.chat, {
-      text: txt,
-      contextInfo: {
-        externalAdReply: {
-          title: "Elite Bot - Catbox Uploader",
-          body: "¡Subida exitosa!",
-          thumbnailUrl: "https://i.ibb.co/2N3f4QJ/catbox-thumbnail.jpg", // miniatura predeterminada
-          mediaType: 1,
-          renderLargerThumbnail: true,
-          showAdAttribution: true
-        }
-      }
-    }, { quoted: m });
+    await conn.sendMessage(m.chat, { text: txt }, { quoted: m });
     
     // React de éxito
     await conn.sendMessage(m.chat, { react: { text: "✅", key: m.key } });

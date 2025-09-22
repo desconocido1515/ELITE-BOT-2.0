@@ -11,10 +11,11 @@ handler.before = async function (m, { conn, participants, groupMetadata }) {
     // Resolver JID real del remitente
     const usuarioJid = await resolveLidToRealJid(m?.sender, conn, m?.chat)
     let usuario = await conn.getName(usuarioJid)
-    if (!usuario || usuario.match(/\d/)) usuario = 'Desconocido' // fallback si solo es número
-
-    // Admins del grupo
-    const groupAdmins = participants.filter(p => p.admin)
+    // fallback al nombre en participants
+    if (!usuario || usuario.match(/\d/)) {
+        const participant = participants.find(p => p.jid === usuarioJid)
+        usuario = participant?.name || participant?.notify || usuarioJid.split('@')[0]
+    }
 
     // fkontak para quotes
     let fkontak = { 
@@ -52,37 +53,41 @@ handler.before = async function (m, { conn, participants, groupMetadata }) {
     if (chat.detect) {
         try {
             switch (m.messageStubType) {
-                case 21: // Cambio de nombre de grupo
+                case 21:
                     await sendReply(`${usuario} HA CAMBIADO EL NOMBRE DEL GRUPO A:\n\n*${m.messageStubParameters?.[0] || 'N/A'}*`)
                     break
-                case 22: // Cambio de foto
+                case 22:
                     await sendReply(`${usuario} HA CAMBIADO LA FOTO DEL GRUPO`)
                     break
-                case 24: // Cambio de descripción
+                case 24:
                     await sendReply(`${usuario} NUEVA DESCRIPCIÓN DEL GRUPO:\n\n${m.messageStubParameters?.[0] || 'N/A'}`)
                     break
-                case 25: // Solo admins pueden editar info
+                case 25:
                     await sendReply(`🔒 AHORA *${m.messageStubParameters?.[0] == 'on' ? 'SOLO ADMINS' : 'TODOS'}* PUEDEN EDITAR LA INFORMACIÓN DEL GRUPO`)
                     break
-                case 26: // Grupo cerrado o abierto
+                case 26:
                     await sendReply(`${m.messageStubParameters?.[0] == 'on' ? '❱❱ GRUPO CERRADO ❰❰' : '❱❱ GRUPO ABIERTO ❰❰'}\n\n ${groupMetadata?.subject || 'Grupo'}\n 👤 ${usuario}`)
                     break
-                case 29: // Usuario se vuelve admin
-                    {
-                        let targetJid = await resolveLidToRealJid(m.messageStubParameters?.[0], conn, m.chat)
-                        let targetName = await conn.getName(targetJid)
-                        if (!targetName || targetName.match(/\d/)) targetName = 'Desconocido'
-                        await sendReply(`❱❱ FELICIDADES\n👤 ${targetName}\nAHORA ES ADMIN.\n👤 ${usuario}`, [usuarioJid, targetJid])
+                case 29: {
+                    let targetJid = await resolveLidToRealJid(m.messageStubParameters?.[0], conn, m.chat)
+                    let targetName = await conn.getName(targetJid)
+                    if (!targetName || targetName.match(/\d/)) {
+                        const participant = participants.find(p => p.jid === targetJid)
+                        targetName = participant?.name || participant?.notify || targetJid.split('@')[0]
                     }
+                    await sendReply(`❱❱ FELICIDADES\n👤 ${targetName}\nAHORA ES ADMIN.\n👤 ${usuario}`, [usuarioJid, targetJid])
                     break
-                case 30: // Usuario deja de ser admin
-                    {
-                        let targetJid = await resolveLidToRealJid(m.messageStubParameters?.[0], conn, m.chat)
-                        let targetName = await conn.getName(targetJid)
-                        if (!targetName || targetName.match(/\d/)) targetName = 'Desconocido'
-                        await sendReply(`❱❱ INFORMACIÓN\n👤 ${targetName}\nYA NO ES ADMIN.\n👤 ${usuario}`, [usuarioJid, targetJid])
+                }
+                case 30: {
+                    let targetJid = await resolveLidToRealJid(m.messageStubParameters?.[0], conn, m.chat)
+                    let targetName = await conn.getName(targetJid)
+                    if (!targetName || targetName.match(/\d/)) {
+                        const participant = participants.find(p => p.jid === targetJid)
+                        targetName = participant?.name || participant?.notify || targetJid.split('@')[0]
                     }
+                    await sendReply(`❱❱ INFORMACIÓN\n👤 ${targetName}\nYA NO ES ADMIN.\n👤 ${usuario}`, [usuarioJid, targetJid])
                     break
+                }
                 default:
                     break
             }

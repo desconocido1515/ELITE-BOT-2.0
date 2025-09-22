@@ -106,6 +106,12 @@ pencarikode: 'https://pencarikode.xyz',
 Velgrynd: 'https://velgrynd.herokuapp.com',
 rey: 'https://server-api-rey.herokuapp.com',
 hardianto: 'http://hardianto-chan.herokuapp.com',
+
+vreden: { url: "https://api.vreden.web.id", key: null },
+delirius: { url: "https://api.delirius.store", key: null },
+zenzxz: { url: "https://api.zenzxz.my.id", key: null },
+siputzx: { url: "https://api.siputzx.my.id", key: null },
+  
 shadow: 'https://api.reysekha.xyz',
 apialc: 'https://api-alc.herokuapp.com',
 botstyle: 'https://botstyle-api.herokuapp.com',

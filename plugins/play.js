@@ -1,56 +1,32 @@
 import fetch from "node-fetch";
 import yts from "yt-search";
 
-// Lista de APIs prioritarias (la de vreden primero)
-const APIS = [
-  {
-    name: "vreden",
-    url: (videoUrl) => `https://api.vreden.my.id/api/ytmp3?url=${encodeURIComponent(videoUrl)}&quality=64`, // Cambié la calidad a 64 kbps
-    extract: (data) => data?.result?.download?.url
-  },
-  {
-    name: "zenkey",
-    url: (videoUrl) => `https://api.zenkey.my.id/api/download/ytmp3?apikey=zenkey&url=${encodeURIComponent(videoUrl)}&quality=64`, // Añadí calidad baja
-    extract: (data) => data?.result?.download?.url
-  },
-  {
-    name: "yt1s",
-    url: (videoUrl) => `https://yt1s.io/api/ajaxSearch?q=${encodeURIComponent(videoUrl)}`,
-    extract: async (data) => {
-      const k = data?.links?.mp3?.auto?.k;
-      return k ? `https://yt1s.io/api/ajaxConvert?vid=${data.vid}&k=${k}&quality=64` : null; // Ajusté la calidad en la URL
-    }
-  }
-];
-
-// Función mejorada para obtener audio
-const getAudioUrl = async (videoUrl) => {
-  let lastError = null;
-  
-  for (const api of APIS) {
+// Función para probar varias APIs
+async function fetchFromApis(apis) {
+  for (const { api, endpoint, extractor } of apis) {
     try {
-      console.log(`Probando API: ${api.name}`);
-      const apiUrl = api.url(videoUrl);
-      const response = await fetch(apiUrl, { timeout: 5000 }); // Timeout de 5 segundos
-      
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      
-      const data = await response.json();
-      const audioUrl = await api.extract(data);
-      
-      if (audioUrl) {
-        console.log(`Éxito con API: ${api.name}`);
-        return audioUrl;
-      }
-    } catch (error) {
-      console.error(`Error con API ${api.name}:`, error.message);
-      lastError = error;
-      continue; // Intentar con la siguiente API
-    }
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      const res = await fetch(endpoint, { signal: controller.signal }).then(r => r.json());
+      clearTimeout(timeout);
+      const link = extractor(res);
+      if (link) return { url: link, api };
+    } catch (e) {}
+    await new Promise(resolve => setTimeout(resolve, 500));
   }
-  
-  throw lastError || new Error("Todas las APIs fallaron");
-};
+  return null;
+}
+
+// APIs disponibles (funcionales del segundo código)
+async function getAud(url) {
+  const apis = [
+    { api: 'ZenzzXD', endpoint: `${global.APIs.zenzxz.url}/downloader/ytmp3?url=${encodeURIComponent(url)}`, extractor: res => res.download_url },
+    { api: 'ZenzzXD v2', endpoint: `${global.APIs.zenzxz.url}/downloader/ytmp3v2?url=${encodeURIComponent(url)}`, extractor: res => res.download_url }, 
+    { api: 'Vreden', endpoint: `${global.APIs.vreden.url}/api/ytmp3?url=${encodeURIComponent(url)}`, extractor: res => res.result?.download?.url },
+    { api: 'Delirius', endpoint: `${global.APIs.delirius.url}/download/ymp3?url=${encodeURIComponent(url)}`, extractor: res => res.data?.download?.url }
+  ];
+  return await fetchFromApis(apis);
+}
 
 const handler = async (m, { conn, text, usedPrefix, command }) => {
   if (!text || !text.trim()) {
@@ -60,17 +36,17 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
   try {
     await conn.sendMessage(m.chat, { react: { text: "🕒", key: m.key } });
 
-    // Búsqueda más rápida con límite de resultados
+    // Buscar canción
     const searchResults = await yts({ query: text.trim(), hl: 'es', gl: 'ES' });
     const video = searchResults.videos[0];
     if (!video) throw new Error("No se encontró el video");
 
-    // Verificar duración (max 10 minutos para evitar audios largos)
+    // Límite de duración (10 min)
     if (video.seconds > 600) {
       throw "❌ El audio es muy largo (máximo 10 minutos)";
     }
 
-    // Enviar información del video (mismo diseño)
+    // Enviar preview del video
     await conn.sendMessage(m.chat, {
       text: `01:27 ━━━━━⬤────── 05:48\n*⇄ㅤ      ◁        ❚❚        ▷        ↻*\n╴𝗘𝗹𝗶𝘁𝗲 𝗕𝗼𝘁 𝗚𝗹𝗼𝗯𝗮𝗹`,
       contextInfo: {
@@ -86,18 +62,16 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
       }
     }, { quoted: m });
 
-    // Obtener audio (con reintentos)
-    let audioUrl;
-    try {
-      audioUrl = await getAudioUrl(video.url);
-    } catch (e) {
-      console.error("Error al obtener audio:", e);
-      throw "⚠️ Error al procesar el audio. Intenta con otra canción";
-    }
+    // Obtener audio usando APIs nuevas
+    let audioData = await getAud(video.url);
+    if (!audioData?.url) throw "⚠️ Error al procesar el audio. Intenta con otra canción";
 
-    // Enviar audio optimizado
+    // Avisar qué servidor funcionó
+    await m.reply(`> ❀ *Audio procesado. Servidor:* \`${audioData.api}\``);
+
+    // Enviar audio
     await conn.sendMessage(m.chat, {
-      audio: { url: audioUrl },
+      audio: { url: audioData.url },
       mimetype: "audio/mpeg",
       fileName: `${video.title.slice(0, 30)}.mp3`.replace(/[^\w\s.-]/gi, ''),
       ptt: false
@@ -120,6 +94,6 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
   }
 };
 
-handler.command = ['play', 'playaudio', 'ytmusic'];
+handler.command = ['play', 'playaudio', 'ytmusic', 'yta', 'ytmp3'];
 handler.exp = 0;
 export default handler;

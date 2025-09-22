@@ -19,7 +19,7 @@ handler.before = async function (m, { conn, participants, groupMetadata}) {
 },
         message: {
             locationMessage: {
-                name: "*Sasuke Bot MD 🌀*",
+                name: "𝙀𝙡𝙞𝙩𝙚 𝘽𝙤𝙩 𝙂𝙡𝙤𝙗𝙖𝙡 2023 -",
                 jpegThumbnail: await (await fetch('https://files.catbox.moe/1j784p.jpg')).buffer(),
                 vcard:
                     "BEGIN:VCARD\n" +

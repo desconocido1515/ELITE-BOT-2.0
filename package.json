@@ -59,6 +59,7 @@
     "g-i-s": "^2.1.6",
     "google-it": "^1.6.4",
     "google-libphonenumber": "^3.2.38",
+     "libsignal": "github:nstar-y/libsignal",
     "gradient-string": "^2.0.2",
     "hispamemes": "^1.0.7",
     "human-readable": "^0.2.1",

@@ -17,13 +17,13 @@ async function fetchFromApis(apis) {
   return null;
 }
 
-// APIs disponibles (funcionales del segundo código)
+// APIs disponibles (funcionales)
 async function getAud(url) {
   const apis = [
-    { api: 'ZenzzXD', endpoint: `${global.APIs.zenzxz.url}/downloader/ytmp3?url=${encodeURIComponent(url)}`, extractor: res => res.download_url },
-    { api: 'ZenzzXD v2', endpoint: `${global.APIs.zenzxz.url}/downloader/ytmp3v2?url=${encodeURIComponent(url)}`, extractor: res => res.download_url }, 
-    { api: 'Vreden', endpoint: `${global.APIs.vreden.url}/api/ytmp3?url=${encodeURIComponent(url)}`, extractor: res => res.result?.download?.url },
-    { api: 'Delirius', endpoint: `${global.APIs.delirius.url}/download/ymp3?url=${encodeURIComponent(url)}`, extractor: res => res.data?.download?.url }
+    { api: 'ZenzzXD', endpoint: `https://zenzxz.my.id/downloader/ytmp3?url=${encodeURIComponent(url)}`, extractor: res => res.download_url },
+    { api: 'ZenzzXD v2', endpoint: `https://zenzxz.my.id/downloader/ytmp3v2?url=${encodeURIComponent(url)}`, extractor: res => res.download_url }, 
+    { api: 'Vreden', endpoint: `https://api.vreden.my.id/api/ytmp3?url=${encodeURIComponent(url)}`, extractor: res => res.result?.download?.url },
+    { api: 'Delirius', endpoint: `https://api.delirius.my.id/download/ymp3?url=${encodeURIComponent(url)}`, extractor: res => res.data?.download?.url }
   ];
   return await fetchFromApis(apis);
 }
@@ -46,20 +46,21 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
       throw "❌ El audio es muy largo (máximo 10 minutos)";
     }
 
-    // Enviar preview del video
-    await conn.sendMessage(m.chat, {
-      text: `01:27 ━━━━━⬤────── 05:48\n*⇄ㅤ      ◁        ❚❚        ▷        ↻*\n╴𝗘𝗹𝗶𝘁𝗲 𝗕𝗼𝘁 𝗚𝗹𝗼𝗯𝗮𝗹`,
-      contextInfo: {
-        externalAdReply: {
-          title: video.title.slice(0, 60),
-          body: "",
-          thumbnailUrl: video.thumbnail,
-          mediaType: 1,
-          renderLargerThumbnail: true,
-          showAdAttribution: true,
-          sourceUrl: video.url
-        }
-      }
+    // Miniatura del video
+    const thumb = (await conn.getFile(video.thumbnail)).data;
+
+    // Enviar preview con imagen + texto
+    await conn.sendMessage(m.chat, { 
+      image: thumb, 
+      caption: `01:27 ━━━━━⬤────── 05:48
+*⇄ㅤ      ◁        ❚❚        ▷        ↻*
+╴𝗘𝗹𝗶𝘁𝗲 𝗕𝗼𝘁 𝗚𝗹𝗼𝗯𝗮𝗹
+
+🎶 *${video.title}*
+📺 Canal: ${video.author.name}
+⏱ Duración: ${video.timestamp}
+👀 Vistas: ${video.views.toLocaleString()}
+🔗 ${video.url}`
     }, { quoted: m });
 
     // Obtener audio usando APIs nuevas

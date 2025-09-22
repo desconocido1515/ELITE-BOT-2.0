@@ -1,111 +1,80 @@
-import axios from 'axios'
+import fetch from "node-fetch"
+import yts from 'yt-search'
 
-const SEARCH_API = 'https://delirius-apiofc.vercel.app/search/spotify?q='
-const DL_API = 'https://delirius-apiofc.vercel.app/download/spotifydl?url='
+const handler = async (m, { conn, text, usedPrefix, command }) => {
+try {
+if (!text.trim()) return conn.reply(m.chat, `❀ Por favor, ingresa el nombre de la música a descargar.`, m)
+await m.react('🕒')
+const videoMatch = text.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/|v\/))([a-zA-Z0-9_-]{11})/)
+const query = videoMatch ? 'https://youtu.be/' + videoMatch[1] : text
+const search = await yts(query)
+const result = videoMatch ? search.videos.find(v => v.videoId === videoMatch[1]) || search.all[0] : search.all[0]
+if (!result) throw 'ꕥ No se encontraron resultados.'
+const { title, thumbnail, timestamp, views, ago, url, author, seconds } = result
+if (seconds > 1800) throw '⚠ El video supera el límite de duración (10 minutos).'
+const vistas = formatViews(views)
+const info = `「✦」Descargando *<${title}>*\n\n> ❑ Canal » *${author.name}*\n> ♡ Vistas » *${vistas}*\n> ✧︎ Duración » *${timestamp}*\n> ☁︎ Publicado » *${ago}*\n> ➪ Link » ${url}`
+const thumb = (await conn.getFile(thumbnail)).data
+await conn.sendMessage(m.chat, { image: thumb, caption: info }, { quoted: m })
+if (['play', 'yta', 'ytmp3', 'playaudio'].includes(command)) {
+const audio = await getAud(url)
+if (!audio?.url) throw '⚠ No se pudo obtener el audio.'
+m.reply(`> ❀ *Audio procesado. Servidor:* \`${audio.api}\``)
+await conn.sendMessage(m.chat, { audio: { url: audio.url }, fileName: `${title}.mp3`, mimetype: 'audio/mpeg' }, { quoted: m })
+await m.react('✔️')
+} else if (['play2', 'ytv', 'ytmp4', 'mp4'].includes(command)) {
+const video = await getVid(url)
+if (!video?.url) throw '⚠ No se pudo obtener el video.'
+m.reply(`> ❀ *Vídeo procesado. Servidor:* \`${video.api}\``)
+await conn.sendFile(m.chat, video.url, `${title}.mp4`, `> ❀ ${title}`, m)
+await m.react('✔️')
+}} catch (e) {
+await m.react('✖️')
+return conn.reply(m.chat, typeof e === 'string' ? e : '⚠︎ Se ha producido un problema.\n> Usa *' + usedPrefix + 'report* para informarlo.\n\n' + e.message, m)
+}}
 
-let handler = async (m, {conn, text, usedPrefix, command}) => {
-  if (!text) {
-    throw (
-      `${lenguajeGB.smsMalused2?.() || 'Uso:'} ⊱ *${usedPrefix + command}* <texto o url>\n` +
-      `Ejemplos:\n` +
-      `• *${usedPrefix + command}* TWICE TT\n` +
-      `• *${usedPrefix + command}* https://open.spotify.com/track/60jFaQV7Z4boGC4ob5B5c6`
-    )
-  }
+handler.command = handler.help = ['play', 'yta', 'ytmp3', 'play2', 'ytv', 'ytmp4', 'playaudio', 'mp4']
+handler.tags = ['descargas']
+handler.group = true
 
-  try {
-    m.react?.('⌛️')
-
-    const isSpotifyUrl = /https?:\/\/open\.spotify\.com\/(track|album|playlist|episode)\/[A-Za-z0-9]+/i.test(text)
-
-    let trackUrl = text.trim()
-    let picked = null
-
-    if (!isSpotifyUrl) {
-      const sURL = `${SEARCH_API}${encodeURIComponent(text.trim())}`
-      const {data: sRes} = await axios.get(sURL, {timeout: 25_000})
-
-      if (!sRes?.status || !Array.isArray(sRes?.data) || sRes.data.length === 0) throw new Error('No se encontraron resultados para tu búsqueda.')
-
-      picked = sRes.data[0]
-      trackUrl = picked.url
-    }
-
-    const dURL = `${DL_API}${encodeURIComponent(trackUrl)}`
-    const {data: dRes} = await axios.get(dURL, {timeout: 25_000})
-
-    if (!dRes?.status || !dRes?.data?.url) {
-      throw new Error('No se pudo obtener el enlace de descarga.')
-    }
-
-    const {
-      title = picked?.title || 'Desconocido',
-      author = picked?.artist || 'Desconocido',
-      image = picked?.image || '',
-      duration = 0,
-      url: download
-    } = dRes.data || {}
-
-    const toMMSS = (ms) => {
-      const totalSec = Math.floor((+ms || 0) / 1000)
-      const mm = String(Math.floor(totalSec / 60)).padStart(2, '0')
-      const ss = String(totalSec % 60).padStart(2, '0')
-      return `${mm}:${ss}`
-    }
-    const mmss = duration && Number.isFinite(+duration) ? toMMSS(duration) : picked?.duration || '—:—'
-
-    const cover = image || picked?.image || ''
-
-    const info = `🪼 *Título:*
-${title}
-🪩 *Artista:*
-${author}
-⏳ *Duración:*
-${mmss}
-🔗 *Enlace:*
-${trackUrl}
-
-${wm}`
-
-    await conn.sendMessage(
-      m.chat,
-      {
-        text: info,
-        contextInfo: {
-          forwardingScore: 9999999,
-          isForwarded: true,
-          externalAdReply: {
-            showAdAttribution: true,
-            containsAutoReply: true,
-            renderLargerThumbnail: true,
-            title: 'Spotify Music',
-            mediaType: 1,
-            thumbnailUrl: cover,
-            mediaUrl: download,
-            sourceUrl: download
-          }
-        }
-      },
-      {quoted: m}
-    )
-
-    await conn.sendMessage(
-      m.chat,
-      {
-        audio: {url: download},
-        fileName: `${title}.mp3`,
-        mimetype: 'audio/mpeg'
-      },
-      {quoted: m}
-    )
-
-    m.react?.('✅')
-  } catch (e) {
-    console.log('❌ Error spotify-combinado:', e?.message || e)
-    m.react?.('❌')
-    m.reply(`No pude descargar esa pedorra musica jajajaj lo siento bot `)
-  }
-}
-
-handler.command = ['play', 'music']
 export default handler
+
+async function getAud(url) {
+const apis = [
+{ api: 'ZenzzXD', endpoint: `${global.APIs.zenzxz.url}/downloader/ytmp3?url=${encodeURIComponent(url)}`, extractor: res => res.download_url },
+{ api: 'ZenzzXD v2', endpoint: `${global.APIs.zenzxz.url}/downloader/ytmp3v2?url=${encodeURIComponent(url)}`, extractor: res => res.download_url }, 
+{ api: 'Vreden', endpoint: `${global.APIs.vreden.url}/api/ytmp3?url=${encodeURIComponent(url)}`, extractor: res => res.result?.download?.url },
+{ api: 'Delirius', endpoint: `${global.APIs.delirius.url}/download/ymp3?url=${encodeURIComponent(url)}`, extractor: res => res.data?.download?.url }
+]
+return await fetchFromApis(apis)
+}
+async function getVid(url) {
+const apis = [
+{ api: 'ZenzzXD', endpoint: `${global.APIs.zenzxz.url}/downloader/ytmp4?url=${encodeURIComponent(url)}`, extractor: res => res.download_url },
+{ api: 'ZenzzXD v2', endpoint: `${global.APIs.zenzxz.url}/downloader/ytmp4v2?url=${encodeURIComponent(url)}`, extractor: res => res.download_url },
+{ api: 'Vreden', endpoint: `${global.APIs.vreden.url}/api/ytmp4?url=${encodeURIComponent(url)}`, extractor: res => res.result?.download?.url },
+{ api: 'Delirius', endpoint: `${global.APIs.delirius.url}/download/ytmp4?url=${encodeURIComponent(url)}`, extractor: res => res.data?.download?.url }
+]
+return await fetchFromApis(apis)
+}
+async function fetchFromApis(apis) {
+for (const { api, endpoint, extractor } of apis) {
+try {
+const controller = new AbortController()
+const timeout = setTimeout(() => controller.abort(), 10000)
+const res = await fetch(endpoint, { signal: controller.signal }).then(r => r.json())
+clearTimeout(timeout)
+const link = extractor(res)
+if (link) return { url: link, api }
+} catch (e) {}
+await new Promise(resolve => setTimeout(resolve, 500))
+}
+return null
+}
+function formatViews(views) {
+if (views === undefined) return "No disponible"
+if (views >= 1_000_000_000) return `${(views / 1_000_000_000).toFixed(1)}B (${views.toLocaleString()})`
+if (views >= 1_000_000) return `${(views / 1_000_000).toFixed(1)}M (${views.toLocaleString()})`
+if (views >= 1_000) return `${(views / 1_000).toFixed(1)}k (${views.toLocaleString()})`
+return views.toString()
+}

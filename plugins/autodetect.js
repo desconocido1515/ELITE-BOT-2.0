@@ -55,8 +55,7 @@ handler.before = async function (m, { conn, participants, groupMetadata }) {
                     await sendReply(`${usuario} HA CAMBIADO LA FOTO DEL GRUPO`)
                     break
                 case 24:
-                    await sendReply(`${usuario} NUEVA DESCRIPCIÓN DEL GRUPO:\n\n${m.messageStubParameters?.[0] || 'N/A'}`
-                    )
+                    await sendReply(`${usuario} NUEVA DESCRIPCIÓN DEL GRUPO:\n\n${m.messageStubParameters?.[0] || 'N/A'}`)
                     break
                 case 25:
                     await sendReply(`🔒 AHORA *${m.messageStubParameters?.[0] == 'on' ? 'SOLO ADMINS' : 'TODOS'}* PUEDEN EDITAR LA INFORMACIÓN DEL GRUPO`)
@@ -64,13 +63,13 @@ handler.before = async function (m, { conn, participants, groupMetadata }) {
                 case 26:
                     await sendReply(`${m.messageStubParameters?.[0] == 'on' ? '❱❱ GRUPO CERRADO ❰❰' : '❱❱ GRUPO ABIERTO ❰❰'}\n\n ${groupMetadata?.subject || 'Grupo'}\n 👤 ${usuario}`)
                     break
-                case 29: {
+                case 29: { // Nuevo admin
                     let targetJid = await resolveLidToRealJid(m.messageStubParameters?.[0], conn, m.chat)
                     let targetName = await getRealName(targetJid, conn, participants)
                     await sendReply(`❱❱ FELICIDADES\n👤 ${targetName}\nAHORA ES ADMIN.\n👤 ${usuario}`, [usuarioJid, targetJid])
                     break
                 }
-                case 30: {
+                case 30: { // Quitar admin
                     let targetJid = await resolveLidToRealJid(m.messageStubParameters?.[0], conn, m.chat)
                     let targetName = await getRealName(targetJid, conn, participants)
                     await sendReply(`❱❱ INFORMACIÓN\n👤 ${targetName}\nYA NO ES ADMIN.\n👤 ${usuario}`, [usuarioJid, targetJid])

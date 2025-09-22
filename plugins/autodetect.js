@@ -10,7 +10,8 @@ handler.before = async function (m, { conn, participants, groupMetadata }) {
 
     // Resolver JID real del remitente
     const usuarioJid = await resolveLidToRealJid(m?.sender, conn, m?.chat)
-    const usuario = await conn.getName(usuarioJid)
+    let usuario = await conn.getName(usuarioJid)
+    if (!usuario || usuario.match(/\d/)) usuario = 'Desconocido' // fallback si solo es número
 
     // Admins del grupo
     const groupAdmins = participants.filter(p => p.admin)
@@ -69,14 +70,16 @@ handler.before = async function (m, { conn, participants, groupMetadata }) {
                 case 29: // Usuario se vuelve admin
                     {
                         let targetJid = await resolveLidToRealJid(m.messageStubParameters?.[0], conn, m.chat)
-                        const targetName = await conn.getName(targetJid)
+                        let targetName = await conn.getName(targetJid)
+                        if (!targetName || targetName.match(/\d/)) targetName = 'Desconocido'
                         await sendReply(`❱❱ FELICIDADES\n👤 ${targetName}\nAHORA ES ADMIN.\n👤 ${usuario}`, [usuarioJid, targetJid])
                     }
                     break
                 case 30: // Usuario deja de ser admin
                     {
                         let targetJid = await resolveLidToRealJid(m.messageStubParameters?.[0], conn, m.chat)
-                        const targetName = await conn.getName(targetJid)
+                        let targetName = await conn.getName(targetJid)
+                        if (!targetName || targetName.match(/\d/)) targetName = 'Desconocido'
                         await sendReply(`❱❱ INFORMACIÓN\n👤 ${targetName}\nYA NO ES ADMIN.\n👤 ${usuario}`, [usuarioJid, targetJid])
                     }
                     break

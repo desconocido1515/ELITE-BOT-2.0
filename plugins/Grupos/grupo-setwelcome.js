@@ -1,4 +1,4 @@
-let handler = async (m, { conn, text, isROwner, isOwner }) => {
+let handler = async (m, { conn, text }) => {
     let fkontak = { 
         "key": { 
             "participants":"0@s.whatsapp.net", 
@@ -12,52 +12,40 @@ let handler = async (m, { conn, text, isROwner, isOwner }) => {
             }
         }, 
         "participant": "0@s.whatsapp.net" 
-    };
+    }
+
+    // Inicializar DB si no existe
+    global.db.data.chats[m.chat] = global.db.data.chats[m.chat] || {}
 
     if (text) {
-        global.db.data.chats[m.chat].sWelcome = text;
-        // **THIS IS THE KEY FIX:** Save the database after modification
-        await global.db.write(); 
-        conn.reply(m.chat, '_*LA BIENVENIDA DEL GRUPO HA SIDO CONFIGURADA*_', fkontak, m);
-    } else {
-        conn.reply(m.chat, `
-        
-        
-        
-       ✦ ¡Hola!
+        global.db.data.chats[m.chat].sWelcome = text
+        conn.reply(m.chat, '✅ Bienvenida configurada con éxito.', fkontak, m)
+    } else throw `✦ ¡Hola!
 Te ayudaré a configurar la bienvenida y despedida. 
 
-> Primeramente debes saber que al usar este símbolo (@) te ayuda a etiquetar a la persona , mencionar el grupo e incluir la descripción en este grupo. 
+> Primeramente debes saber que al usar este símbolo (@) te ayuda a etiquetar a la persona, mencionar el grupo e incluir la descripción en este grupo. 
 
 » (@user)
-Para etiquetar a la persona .
+Para etiquetar a la persona.
 » (@desc)
 Para incluir la descripción del grupo.
-» (@group)
+» (@subject)
 Para mencionar el nombre de este grupo.
 
 💫 Ejemplo Bienvenida:
 
-.setwelcome Bienvenido @user al mejor grupo @group ,  siéntete en casa. ❤️ 
+.setwelcome Bienvenido @user al mejor grupo @subject , siéntete en casa ❤️
 
 @desc
 
 💫 Ejemplo Despedida:
 
-.setbye Adiós Popo 🤡 @user.  
-        
-        
-        
-        
-        `, m);
-    }
-};
+.setbye Adiós 🤡 @user.`
+}
 
-handler.help = ['setwelcome @user + texto'];
-handler.tags = ['group'];
-handler.command = ['setwelcome', 'bienvenida']; 
-handler.botAdmin = true;
-handler.admin = true;
-handler.group = true;
+handler.command = ['setwelcome', 'bienvenida'] 
+handler.botAdmin = true
+handler.admin = true
+handler.group = true
 
-export default handler;
+export default handler

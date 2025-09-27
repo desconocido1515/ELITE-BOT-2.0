@@ -20,7 +20,36 @@ let handler = async (m, { conn, text, isROwner, isOwner }) => {
         await global.db.write(); 
         conn.reply(m.chat, '_*LA BIENVENIDA DEL GRUPO HA SIDO CONFIGURADA*_', fkontak, m);
     } else {
-        conn.reply(m.chat, `*_ESCRIBE EL MENSAJE DE BIENVENIDA_*\n*_OPCIONAL PUEDE USAR LO QUE ESTA CON "@" PARA AGREGAR MÁS INFORMACIÓN:_*\n\n*⚡ @user (Mención al usuario(a))*\n*⚡ @group (Nombre de grupo)*\n*⚡ @desc (Description de grupo)*\n\n*RECUERDE QUE LOS "@" SON OPCIONALES*`, m);
+        conn.reply(m.chat, `
+        
+        
+        
+       ✦ ¡Hola!
+Te ayudaré a configurar la bienvenida y despedida. 
+
+> Primeramente debes saber que al usar este símbolo (@) te ayuda a etiquetar a la persona , mencionar el grupo e incluir la descripción en este grupo. 
+
+» (@user)
+Para etiquetar a la persona .
+» (@desc)
+Para incluir la descripción del grupo.
+» (@group)
+Para mencionar el nombre de este grupo.
+
+💫 Ejemplo Bienvenida:
+
+.setwelcome Bienvenido @user al mejor grupo @group ,  siéntete en casa. ❤️ 
+
+@desc
+
+💫 Ejemplo Despedida:
+
+.setbye Adiós Popo 🤡 @user.  
+        
+        
+        
+        
+        `, m);
     }
 };
 

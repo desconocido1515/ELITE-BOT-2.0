@@ -8,7 +8,7 @@ const handler = async (m, { conn, text, participants }) => {
     const isMedia = /image|video|sticker|audio/.test(mime);
 
     const finalText = (text || quoted?.text || '').trim();
-    const fullMessage = finalText + '\nㅤㅤㅤㅤㅤㅤㅤㅤ𝔈𝔩𝔦𝔱𝔢 𝔅𝔬𝔱 𝔊𝔩𝔬𝔟𝔞𝔩';
+    const fullMessage = finalText + '\nㅤㅤㅤㅤㅤㅤㅤㅤ2023 ELITE BOT GLOBAL';
 
     const options = {
       mentions: users,

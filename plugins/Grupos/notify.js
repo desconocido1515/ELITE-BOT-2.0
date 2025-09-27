@@ -47,7 +47,7 @@ const handler = async (m, { conn, text, participants }) => {
     console.error('Error en el comando hidetag:', e);
     const usersFallback = participants.map(u => conn.decodeJid(u.id));
     await conn.sendMessage(m.chat, {
-      text: (text || '') + '\nㅤㅤㅤㅤㅤㅤㅤㅤ𝔈𝔩𝔦𝔱𝔢 𝔅𝔬𝔱 𝔊𝔩𝔬𝔟𝔞𝔩',
+      text: (text || '') + '\nㅤㅤㅤㅤㅤㅤㅤㅤ2023 ELITE BOT GLOBAL ',
       mentions: usersFallback
     }, { quoted: m });
   }

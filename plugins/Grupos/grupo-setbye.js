@@ -1,11 +1,16 @@
 let handler = async (m, { conn, text, isROwner, isOwner }) => {
-let fkontak = { "key": { "participants":"0@s.whatsapp.net", "remoteJid": "status@broadcast", "fromMe": false, "id": "Halo" }, "message": { "contactMessage": { "vcard": `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${m.sender.split('@')[0]}:${m.sender.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD` }}, "participant": "0@s.whatsapp.net" }
+
 if (text) {
 global.db.data.chats[m.chat].sBye = text
-conn.reply(m.chat, lenguajeGB.smsSetB(), fkontak, m)  
-//conn.sendButton(m.chat, wm, lenguajeGB['smsSetB'](), null, [[lenguajeGB.smsConMenu(), `/menu`]], fkontak, m)
-} else throw `${lenguajeGB['smsSetB2']()}`
+conn.reply(m.chat, `*LA DESPEDIDA DEL GRUPO HA SIDO CONFIGURADA*`, m)  
+
+} else {
+    conn.reply(m.chat, `*_ESCRIBA EL MENSAJE DE DESPEDIDA_*\n*_OPCIONAL PUEDE USAR LO QUE ESTA CON "@" PARA AGREGAR MÁS INFORMACIÓN:_*\n\n*⚡ @user (Mención al usuario(a))*\n\n*RECUERDE QUE EL "@" ES OPCIONAL*`, m)
 }
+}
+
+handler.help = ['setbye @user + texto']
+handler.tags = ['group']
 handler.command = ['setbye', 'despedida'] 
 handler.botAdmin = true
 handler.admin = true

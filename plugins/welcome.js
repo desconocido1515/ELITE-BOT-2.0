@@ -96,7 +96,6 @@ export async function before(m, { conn, groupMetadata }) {
 ┃ 👤 ${user}
 ┃ 🏆 𝗖𝗟𝗔𝗡: ${groupName}
 ┃ 📊 Integrantes actuales: ${memberCount}
-┃ 📌 Descripción: ${groupDesc}
 ╰━━━━━━━━⋆⋆━━━━━━━━─`;
       }
 
@@ -127,9 +126,8 @@ export async function before(m, { conn, groupMetadata }) {
       } else {
         caption = `╭━━━━━━━━⋆⋆━━━━━━━━─
 ┃ 𝗦𝗘 𝗦𝗔𝗟𝗜Ó 𝗨𝗡𝗔 𝗕𝗔𝗦𝗨𝗥𝗔 🚮
-┃ 👋 ${user}
+┃ 💩 ${user}
 ┃ 📊 Integrantes actuales: ${memberCount}
-┃ 📌 Descripción: ${groupDesc}
 ╰━━━━━━━━⋆⋆━━━━━━━━─`;
       }
 

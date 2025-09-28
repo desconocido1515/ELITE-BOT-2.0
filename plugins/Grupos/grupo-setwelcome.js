@@ -1,10 +1,11 @@
 let handler = async (m, { conn, args }) => {
   const text = args.join(' ');
-  if (!text) throw `❗ Usa: .setwelcome mensaje [linkImagen]\n\nVariables: @user, @group, @count`;
+  if (!text) throw `❗ Usa: .setwelcome mensaje [linkImagen]\n\nVariables: @user, @group, @desc`;
 
   let img = null;
   let msg = text;
 
+  // Detectar si viene una imagen en el texto
   const match = text.match(/(https?:\/\/\S+\.(jpg|jpeg|png|gif))/i);
   if (match) {
     img = match[0];

@@ -5,8 +5,8 @@ export async function before(m, { conn, groupMetadata }) {
   try {
     if (!m.messageStubType || !m.isGroup) return true;
 
-    const chat = global.db?.data?.chats?.[m.chat];
-    if (!chat?.bienvenida) return true;
+    const chat = global.db?.data?.chats?.[m.chat] || {};
+    if (!chat.bienvenida) return true;
 
     let userJid;
     switch (m.messageStubType) {
@@ -79,16 +79,27 @@ export async function before(m, { conn, groupMetadata }) {
 
     // BIENVENIDA
     if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
-      const welcomeText = `╭━━━━━━━━⋆⋆━━━━━━━━─
+      let caption;
+      let img = imgBuffer;
+
+      if (chat.welcome?.text) {
+        caption = chat.welcome.text
+          .replace(/@user/gi, user)
+          .replace(/@group/gi, groupName)
+          .replace(/@count/gi, memberCount);
+        if (chat.welcome.img) img = { url: chat.welcome.img };
+      } else {
+        caption = `╭━━━━━━━━⋆⋆━━━━━━━━─
 ┃ ⏤͟͟͞͞𝗕𝗜𝗘𝗡𝗩𝗘𝗡𝗜𝗗𝗢 🌟
 ┃ 👤 ${user}
 ┃ 🏆 𝗖𝗟𝗔𝗡: ${groupName}
 ┃ 📊 Integrantes actuales: ${memberCount}
 ╰━━━━━━━━⋆⋆━━━━━━━━─`;
+      }
 
       await conn.sendMessage(m.chat, {
-        image: imgBuffer,
-        caption: welcomeText,
+        image: img,
+        caption,
         mentions: [userJid]
       });
 
@@ -100,15 +111,26 @@ export async function before(m, { conn, groupMetadata }) {
       m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE ||
       m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE
     ) {
-      const goodbyeText = `╭━━━━━━━━⋆⋆━━━━━━━━─
+      let caption;
+      let img = imgBuffer;
+
+      if (chat.bye?.text) {
+        caption = chat.bye.text
+          .replace(/@user/gi, user)
+          .replace(/@group/gi, groupName)
+          .replace(/@count/gi, memberCount);
+        if (chat.bye.img) img = { url: chat.bye.img };
+      } else {
+        caption = `╭━━━━━━━━⋆⋆━━━━━━━━─
 ┃ 𝗦𝗘 𝗦𝗔𝗟𝗜Ó 𝗨𝗡𝗔 𝗕𝗔𝗦𝗨𝗥𝗔 🚮
 ┃ 👋 ${user}
 ┃ 📊 Integrantes actuales: ${memberCount}
 ╰━━━━━━━━⋆⋆━━━━━━━━─`;
+      }
 
       await conn.sendMessage(m.chat, {
-        image: imgBuffer,
-        caption: goodbyeText,
+        image: img,
+        caption,
         mentions: [userJid]
       });
 

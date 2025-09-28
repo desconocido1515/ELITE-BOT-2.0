@@ -18,7 +18,7 @@ let handler = async (m, { conn, text }) => {
     global.db.data.chats[m.chat] = global.db.data.chats[m.chat] || {}
 
     if (text) {
-        global.db.data.chats[m.chat].sWelcome = text
+        global.db.data.chats[m.chat].bienvenida = text
         conn.reply(m.chat, '✅ Bienvenida configurada con éxito.', fkontak, m)
     } else throw `✦ ¡Hola!
 Te ayudaré a configurar la bienvenida y despedida. 

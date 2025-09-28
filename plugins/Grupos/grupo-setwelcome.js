@@ -30,4 +30,6 @@ let handler = async (m, { args, conn }) => {
 };
 
 handler.command = /^setwelcome$/i;
+handler.admin = true; // <-- Esta linea fue corregida
+handler.group = true;
 export default handler;

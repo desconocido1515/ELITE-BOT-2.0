@@ -9,7 +9,8 @@ let handler = async (m, { args, conn }) => {
     }
 
     const participant = metadata.participants.find(p => p.id === m.sender);
-    if (!participant?.admin) return m.reply('❌ Solo los administradores pueden usar este comando.');
+    const isAdmin = participant && (participant.admin === 'admin' || participant.admin === 'superadmin');
+    if (!isAdmin) return m.reply('❌ Solo los administradores pueden usar este comando.');
   }
 
   const text = args.join(' ');
@@ -30,6 +31,4 @@ let handler = async (m, { args, conn }) => {
 };
 
 handler.command = /^setwelcome$/i;
-handler.admin = true; // <-- Esta linea fue corregida
-handler.group = true;
 export default handler;

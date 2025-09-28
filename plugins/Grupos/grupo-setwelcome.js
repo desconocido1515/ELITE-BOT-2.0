@@ -15,11 +15,9 @@ let handler = async (m, { conn, args }) => {
   }
 
   // 2) Si el usuario respondió a una imagen
-  if (!img && m.quoted && (m.quoted.mimetype || '').startsWith('image/')) {
-    let media = await m.quoted.download();
-    // Subir la imagen a un hosting o buffer
-    // Aquí guardamos como buffer en la DB directamente
-    img = media;
+  if (!img && m.quoted && m.quoted.message && m.quoted.message.imageMessage) {
+    const media = await conn.downloadMediaMessage(m.quoted); // descarga la imagen en buffer
+    img = media; // guardamos el buffer
   }
 
   // Si aún no hay texto, pero sí imagen

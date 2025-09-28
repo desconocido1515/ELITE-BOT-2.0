@@ -23,7 +23,7 @@ export async function before(m, { conn, groupMetadata }) {
 
     if (!userJid) return true;
 
-    const IMG_PREDETERMINADA = 'https://n.uguu.se/vldhWGbB.jpg';
+    const IMG_PREDETERMINADA = 'https://files.catbox.moe/1lq97i.jpg';
 
     // Recursos
     const STICKER_URLS = [

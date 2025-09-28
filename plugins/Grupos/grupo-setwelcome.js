@@ -1,33 +1,40 @@
-import fetch from 'node-fetch';
+import { downloadContentFromMessage } from '@whiskeysockets/baileys';
+import { promises as fs } from 'fs';
 
 let handler = async (m, { conn, args }) => {
+  if (!args.length && !m.quoted) {
+    throw `❗ Uso: .setwelcome mensaje [link de imagen]\nPuedes mencionar una imagen para usarla`;
+  }
+
   let text = args.join(' ');
-  if (!text && !m.quoted) throw `❗ Usa: .setwelcome mensaje [linkImagen o responder a una imagen]\n\nVariables disponibles:\n- @user → menciona al nuevo\n- @group → nombre del grupo\n- @count → integrantes actuales\n- @desc → descripción del grupo`;
-
   let img = null;
-  let msg = text;
 
-  // 1) Si hay link de imagen en el texto
+  // ----------------------- Imagen del link -----------------------
   const match = text.match(/(https?:\/\/\S+\.(jpg|jpeg|png|gif))/i);
   if (match) {
     img = match[0];
-    msg = text.replace(match[0], '').trim();
+    text = text.replace(match[0], '').trim();
   }
 
-  // 2) Si el usuario respondió a una imagen
-  if (!img && m.quoted && m.quoted.message && m.quoted.message.imageMessage) {
-    const media = await conn.downloadMediaMessage(m.quoted); // descarga la imagen en buffer
-    img = media; // guardamos el buffer
+  // ----------------------- Imagen respondida -----------------------
+  if (m.quoted?.message?.imageMessage) {
+    try {
+      const stream = await downloadContentFromMessage(m.quoted.message.imageMessage, 'image');
+      let buffer = Buffer.from([]);
+      for await (const chunk of stream) {
+        buffer = Buffer.concat([buffer, chunk]);
+      }
+      img = buffer; // Guardamos buffer directamente
+    } catch (err) {
+      console.error('❌ Error al descargar la imagen respondida:', err);
+    }
   }
 
-  // Si aún no hay texto, pero sí imagen
-  if (!msg && img) msg = 'Bienvenido @user a @group 🎉';
-
-  // Guardar en la DB
+  // Guardar en DB
   if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {};
-  global.db.data.chats[m.chat].welcome = { text: msg, img };
+  global.db.data.chats[m.chat].welcome = { text, img };
 
-  m.reply(`✅ Mensaje de bienvenida configurado.\n\nTexto:\n${msg}\nImagen: ${img ? (typeof img === 'string' ? img : '[imagen subida]') : 'default'}`);
+  m.reply(`✅ Mensaje de bienvenida configurado.\n\nTexto:\n${text}\nImagen: ${img ? (Buffer.isBuffer(img) ? 'imagen respondida' : img) : 'default'}`);
 };
 
 handler.command = /^setwelcome$/i;

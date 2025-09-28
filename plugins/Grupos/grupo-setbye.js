@@ -1,18 +1,23 @@
-let handler = async (m, { conn, text, isROwner, isOwner }) => {
+let handler = async (m, { args }) => {
+  const text = args.join(' ');
+  if (!text) throw `❗ Uso: .setbye mensaje [link de imagen]\nVariables: @user, @group, @count, @desc`;
 
-if (text) {
-global.db.data.chats[m.chat].sBye = text
-conn.reply(m.chat, `*LA DESPEDIDA DEL GRUPO HA SIDO CONFIGURADA*`, m)  
+  let msg = text;
+  let img = null;
 
-} else {
-    conn.reply(m.chat, `*_ESCRIBA EL MENSAJE DE DESPEDIDA_*\n*_OPCIONAL PUEDE USAR LO QUE ESTA CON "@" PARA AGREGAR MÁS INFORMACIÓN:_*\n\n*⚡ @user (Mención al usuario(a))*\n\n*RECUERDE QUE EL "@" ES OPCIONAL*`, m)
-}
-}
+  // Detectar link de imagen
+  const match = text.match(/(https?:\/\/\S+\.(jpg|jpeg|png|gif))/i);
+  if (match) {
+    img = match[0];
+    msg = text.replace(match[0], '').trim();
+  }
 
-handler.help = ['setbye @user + texto']
-handler.tags = ['group']
-handler.command = ['setbye', 'despedida'] 
-handler.botAdmin = true
-handler.admin = true
-handler.group = true
-export default handler
+  // Guardar en DB
+  if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {};
+  global.db.data.chats[m.chat].bye = { text: msg, img };
+
+  m.reply(`✅ Mensaje de despedida configurado.\n\nTexto:\n${msg}\nImagen: ${img || 'default'}`);
+};
+
+handler.command = /^setbye$/i;
+export default handler;

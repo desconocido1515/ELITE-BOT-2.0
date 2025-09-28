@@ -1,7 +1,16 @@
 let handler = async (m, { args, conn }) => {
   // ----------------- Verificar admin -----------------
-  const isAdmin = m.isGroup ? (m.sender && conn.participants[m.chat]?.find(p => p.id === m.sender)?.admin) : true;
-  if (!isAdmin) return m.reply('❌ Solo los administradores pueden usar este comando.');
+  if (m.isGroup) {
+    let metadata;
+    try {
+      metadata = await conn.groupMetadata(m.chat);
+    } catch (err) {
+      return m.reply('❌ No se pudo obtener información del grupo.');
+    }
+
+    const participant = metadata.participants.find(p => p.id === m.sender);
+    if (!participant?.admin) return m.reply('❌ Solo los administradores pueden usar este comando.');
+  }
 
   const text = args.join(' ');
   if (!text) return m.reply('❗ Uso: .setwelcome mensaje [link de imagen]\nVariables: @user, @group, @count, @desc');

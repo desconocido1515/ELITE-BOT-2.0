@@ -6,7 +6,7 @@ export async function before(m, { conn, groupMetadata }) {
     if (!m.messageStubType || !m.isGroup) return true;
 
     const chat = global.db?.data?.chats?.[m.chat] || {};
-    if (!chat.welcome && !chat.bye) return true;
+    if (!chat.bienvenida) return true;
 
     let userJid;
     switch (m.messageStubType) {
@@ -63,54 +63,45 @@ export async function before(m, { conn, groupMetadata }) {
       }
     };
 
-    // Función para preparar imagen
-    const prepareImage = (img) => {
-      if (!img) return { url: IMG_PREDETERMINADA };
-      if (Buffer.isBuffer(img)) return { image: img, mimetype: 'image/jpeg' };
-      return { url: img };
-    };
-
-    // Intentar obtener foto del usuario
+    // Foto del usuario o predeterminada
     let imgBuffer;
     try {
       const ppUrl = await conn.profilePictureUrl(userJid, 'image');
-      imgBuffer = ppUrl;
+      imgBuffer = { url: ppUrl };
     } catch {
-      imgBuffer = null;
+      imgBuffer = { url: IMG_PREDETERMINADA };
     }
 
     const updatedGroup = await conn.groupMetadata(m.chat);
     const memberCount = updatedGroup.participants.length;
     const user = `@${userJid.split('@')[0]}`;
     const groupName = groupMetadata.subject;
-    const groupDesc = updatedGroup.desc || "Sin descripción";
+    const groupDesc = updatedGroup.desc || "Sin descripción"; // <-- Descripción añadida
 
-    // --------------------- BIENVENIDA ---------------------
+    // BIENVENIDA
     if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
-      let caption, img;
+      let caption;
+      let img = imgBuffer;
 
       if (chat.welcome?.text) {
         caption = chat.welcome.text
           .replace(/@user/gi, user)
           .replace(/@group/gi, groupName)
           .replace(/@count/gi, memberCount)
-          .replace(/@desc/gi, groupDesc);
-        img = prepareImage(chat.welcome.img);
+          .replace(/@desc/gi, groupDesc); // <-- reemplazo @desc
+        if (chat.welcome.img) img = { url: chat.welcome.img };
       } else {
-        // Mensaje por defecto
         caption = `╭━━━━━━━━⋆⋆━━━━━━━━─
 ┃ ⏤͟͟͞͞𝗕𝗜𝗘𝗡𝗩𝗘𝗡𝗜𝗗𝗢 🌟
 ┃ 👤 ${user}
-┃ 
-┃ 🏆 𝗖𝗟𝗔𝗡 : ${groupName}
+┃ 🏆 𝗖𝗟𝗔𝗡: ${groupName}
 ┃ 📊 Integrantes actuales: ${memberCount}
 ┃ 📌 Descripción: ${groupDesc}
 ╰━━━━━━━━⋆⋆━━━━━━━━─`;
-        img = prepareImage(imgBuffer);
       }
 
       await conn.sendMessage(m.chat, {
-        ...img,
+        image: img,
         caption,
         mentions: [userJid]
       });
@@ -118,50 +109,6 @@ export async function before(m, { conn, groupMetadata }) {
       await sendAudio(AUDIO_BIENVENIDA_URL);
     }
 
-    // --------------------- DESPEDIDA / EXPULSIÓN ---------------------
-    if (
-      m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE ||
-      m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE
-    ) {
-      let caption, img;
-
-      if (chat.bye?.text) {
-        caption = chat.bye.text
-          .replace(/@user/gi, user)
-          .replace(/@group/gi, groupName)
-          .replace(/@count/gi, memberCount)
-          .replace(/@desc/gi, groupDesc);
-        img = prepareImage(chat.bye.img);
-      } else {
-        // Mensaje por defecto
-        caption = `╭━━━━━━━━⋆⋆━━━━━━━━─
-┃ 𝗦𝗘 𝗦𝗔𝗟𝗜Ó 𝗨𝗡𝗔 𝗕𝗔𝗦𝗨𝗥𝗔 🚮
-┃ -1 𝗜𝗡𝗦𝗘𝗥𝗩𝗜𝗕𝗟𝗘
-┃ 👤 ${user}
-┃ 📊 Integrantes actuales: ${memberCount}
-┃ 📌 Descripción: ${groupDesc}
-╰━━━━━━━━⋆⋆━━━━━━━━─`;
-        img = prepareImage(imgBuffer);
-      }
-
-      await conn.sendMessage(m.chat, {
-        ...img,
-        caption,
-        mentions: [userJid]
-      });
-
-      if (Math.random() < 0.5) {
-        await sendSticker();
-      } else {
-        const audioUrl = AUDIO_SALIDA_URLS[Math.floor(Math.random() * AUDIO_SALIDA_URLS.length)];
-        await sendAudio(audioUrl);
-      }
-    }
-
-  } catch (error) {
-    console.error('❌ Error en bienvenida/despedida:', error);
-  }
-}
     // DESPEDIDA / EXPULSIÓN
     if (
       m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE ||

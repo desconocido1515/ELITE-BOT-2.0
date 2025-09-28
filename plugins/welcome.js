@@ -1,60 +1,13 @@
-
-import { WAMessageStubType } from '@whiskeysockets/baileys';
 import fetch from 'node-fetch';
 
-export async function before(m, { conn, groupMetadata }) {
+export async function participantsUpdate({ id, participants, action }, conn) {
   try {
-    if (!m.messageStubType || !m.isGroup) return true;
+    const chat = global.db?.data?.chats?.[id];
+    if (!chat?.bienvenida) return;
 
-    const chat = global.db?.data?.chats?.[m.chat];
-    if (!chat?.bienvenida) return true;
-
-    const fkontak = {
-      key: {
-        participants: '0@s.whatsapp.net',
-        remoteJid: 'status@broadcast',
-        fromMe: false,
-        id: 'Halo'
-      },
-      message: {
-        contactMessage: {
-          vcard: `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${
-            conn.user.jid.split('@')[0]
-          }:${conn.user.jid.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD`
-        }
-      },
-      participant: '0@s.whatsapp.net'
-    };
-
-    let userJid;
-    switch (m.messageStubType) {
-      case WAMessageStubType.GROUP_PARTICIPANT_ADD:
-      case WAMessageStubType.GROUP_PARTICIPANT_REMOVE:
-        userJid = m.messageStubParameters?.[0];
-        break;
-      case WAMessageStubType.GROUP_PARTICIPANT_LEAVE:
-        userJid = m.key.participant;
-        break;
-      default:
-        return true;
-    }
-
-    if (!userJid) return true;
-
-    const user = `@${userJid.split('@')[0]}`;
-    const groupName = groupMetadata.subject;
     const IMG_PREDETERMINADA = 'https://n.uguu.se/vldhWGbB.jpg';
 
-    // Intentar obtener foto de perfil del usuario
-    let imgBuffer;
-    try {
-      const ppUrl = await conn.profilePictureUrl(userJid, 'image');
-      imgBuffer = { url: ppUrl };
-    } catch {
-      imgBuffer = { url: IMG_PREDETERMINADA };
-    }
-
-    // Stickers y audios aleatorios
+    // Stickers y audios
     const STICKER_URLS = [
       'https://files.catbox.moe/o58tbw.webp',
       'https://files.catbox.moe/0boonh.webp'
@@ -68,110 +21,83 @@ export async function before(m, { conn, groupMetadata }) {
 
     const AUDIO_BIENVENIDA_URL = 'https://files.catbox.moe/kgykxt.ogg';
 
-    const sendAudio = async (url) => {
+    const sendAudio = async (jid, url) => {
       try {
         const audioBuffer = await fetch(url).then(res => res.buffer());
-        await conn.sendMessage(m.chat, {
+        await conn.sendMessage(jid, {
           audio: audioBuffer,
           mimetype: 'audio/ogg; codecs=opus',
           ptt: true
-        }, { quoted: fkontak });
+        });
       } catch (err) {
-        console.error('❌ Error al enviar el audio:', err);
+        console.error('❌ Error al enviar audio:', err);
       }
     };
 
-    const sendSticker = async () => {
+    const sendSticker = async (jid) => {
       try {
         const url = STICKER_URLS[Math.floor(Math.random() * STICKER_URLS.length)];
         const sticker = await (await fetch(url)).buffer();
-        await conn.sendMessage(m.chat, { sticker });
+        await conn.sendMessage(jid, { sticker });
       } catch (err) {
         console.error('❌ Error al enviar sticker:', err);
       }
     };
 
-    setTimeout(async () => {
+    for (const userJid of participants) {
+      let imgBuffer;
+      try {
+        const ppUrl = await conn.profilePictureUrl(userJid, 'image');
+        imgBuffer = { url: ppUrl };
+      } catch {
+        imgBuffer = { url: IMG_PREDETERMINADA };
+      }
+
+      const groupMetadata = await conn.groupMetadata(id);
+      const memberCount = groupMetadata.participants.length;
+      const user = `@${userJid.split('@')[0]}`;
+
       // BIENVENIDA
-      if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
-        const updatedGroup = await conn.groupMetadata(m.chat);
-        const memberCount = updatedGroup.participants.length; // número de integrantes después de agregar
+      if (action === 'add') {
         const welcomeText = `╭━━━━━━━━⋆⋆━━━━━━━━─
 ┃ ⏤͟͟͞͞𝗕𝗜𝗘𝗡𝗩𝗘𝗡𝗜𝗗𝗢 🌟
 ┃ 👤 ${user}
-┃ 
-┃ 🏆 𝗖𝗟𝗔𝗡 : 
-┃ ${groupName}
+┃ 🏆 𝗖𝗟𝗔𝗡: ${groupMetadata.subject}
 ┃ 📊 Integrantes actuales: ${memberCount}
-┃ ❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘ 
 ╰━━━━━━━━⋆⋆━━━━━━━━─`;
 
-        await conn.sendMessage(m.chat, {
+        await conn.sendMessage(id, {
           image: imgBuffer,
           caption: welcomeText,
           mentions: [userJid]
-        }, { quoted: fkontak });
+        });
 
-        await sendAudio(AUDIO_BIENVENIDA_URL);
+        await sendAudio(id, AUDIO_BIENVENIDA_URL);
       }
 
-      // DESPEDIDA
-      if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE) {
-        const updatedGroup = await conn.groupMetadata(m.chat);
-        const memberCount = updatedGroup.participants.length; // número de integrantes después de salir
-
+      // DESPEDIDA (remove cubre expulsión + salida)
+      if (action === 'remove') {
         const goodbyeText = `╭━━━━━━━━⋆⋆━━━━━━━━─
-┃ 𝗦𝗘 𝗦𝗔𝗟𝗜𝗢 𝗨𝗡𝗔 𝗕𝗔𝗦𝗨𝗥𝗔.
-┃ -1 𝗜𝗡𝗦𝗘𝗥𝗩𝗜𝗕𝗟𝗘 🚮
-┃ ${user}
-┃ 𝗘𝗦𝗖𝗨𝗣𝗔𝗡𝗟𝗘 𝗘𝗡 𝗘𝗦𝗔 𝗖𝗔𝗥𝗔. 
+┃ 𝗦𝗘 𝗦𝗔𝗟𝗜Ó 𝗨𝗡𝗔 𝗕𝗔𝗦𝗨𝗥𝗔 🚮
+┃ 👋 ${user}
 ┃ 📊 Integrantes actuales: ${memberCount}
 ╰━━━━━━━━⋆⋆━━━━━━━━─`;
 
-        await conn.sendMessage(m.chat, {
+        await conn.sendMessage(id, {
           image: imgBuffer,
           caption: goodbyeText,
           mentions: [userJid]
-        }, { quoted: fkontak });
+        });
 
         if (Math.random() < 0.5) {
-          await sendSticker();
+          await sendSticker(id);
         } else {
           const audioUrl = AUDIO_SALIDA_URLS[Math.floor(Math.random() * AUDIO_SALIDA_URLS.length)];
-          await sendAudio(audioUrl);
+          await sendAudio(id, audioUrl);
         }
       }
-
-      // EXPULSIÓN
-      if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE) {
-        const updatedGroup = await conn.groupMetadata(m.chat);
-        const memberCount = updatedGroup.participants.length; // número de integrantes después de la expulsión
-
-        const kickText = `╭━━━━━━━━⋆⋆━━━━━━━━─
-┃ 𝗦𝗘 𝗦𝗔𝗟𝗜𝗢 𝗨𝗡𝗔 𝗕𝗔𝗦𝗨𝗥𝗔.
-┃ -1 𝗜𝗡𝗦𝗘𝗥𝗩𝗜𝗕𝗟𝗘 🚮
-┃ ${user}
-┃ 𝗘𝗦𝗖𝗨𝗣𝗔𝗡𝗟𝗘 𝗘𝗡 𝗘𝗦𝗔 𝗖𝗔𝗥𝗔. 
-┃ 📊 Integrantes actuales: ${memberCount}
-╰━━━━━━━━⋆⋆━━━━━━━━─`;
-
-        await conn.sendMessage(m.chat, {
-          image: imgBuffer,
-          caption: kickText,
-          mentions: [userJid]
-        }, { quoted: fkontak });
-
-        if (Math.random() < 0.5) {
-          await sendSticker();
-        } else {
-          const audioUrl = AUDIO_SALIDA_URLS[Math.floor(Math.random() * AUDIO_SALIDA_URLS.length)];
-          await sendAudio(audioUrl);
-        }
-      }
-
-    }, 2000);
-
+    }
   } catch (error) {
-    console.error('❌ Error general en la función de bienvenida/despedida/expulsión:', error);
+    console.error('❌ Error en bienvenida/despedida:', error);
   }
 }

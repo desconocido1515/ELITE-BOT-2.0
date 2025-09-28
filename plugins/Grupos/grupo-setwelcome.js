@@ -1,16 +1,7 @@
-let handler = async (m, { args, conn }) => {
+let handler = async (m, { isAdmin, isOwner, args }) => {
   // ----------------- Verificar admin -----------------
-  if (m.isGroup) {
-    let metadata;
-    try {
-      metadata = await conn.groupMetadata(m.chat);
-    } catch (err) {
-      return m.reply('❌ No se pudo obtener información del grupo.');
-    }
-
-    const participant = metadata.participants.find(p => p.id === m.sender);
-    const isAdmin = participant && (participant.admin === 'admin' || participant.admin === 'superadmin');
-    if (!isAdmin) return m.reply('❌ Solo los administradores pueden usar este comando.');
+  if (!(isAdmin || isOwner)) {
+    return m.reply('❌ Solo los administradores pueden usar este comando.');
   }
 
   const text = args.join(' ');
@@ -18,7 +9,7 @@ let handler = async (m, { args, conn }) => {
 
   // ----------------- Detectar link de imagen -----------------
   const match = text.match(/(https?:\/\/\S+\.(jpg|jpeg|png|gif))/i);
-  if (!match) return m.reply('❌ Debes incluir un **link de imagen** al final del mensaje para usar este comando.');
+  if (!match) return m.reply('❌ Debes incluir un **link de imagen** al final del mensaje.');
 
   const img = match[0];
   const msg = text.replace(match[0], '').trim();
@@ -31,4 +22,6 @@ let handler = async (m, { args, conn }) => {
 };
 
 handler.command = /^setwelcome$/i;
+handler.group = true;
+handler.admin = true; // asegura que solo admins puedan usarlo
 export default handler;

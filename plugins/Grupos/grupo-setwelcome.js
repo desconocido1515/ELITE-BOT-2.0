@@ -1,22 +1,23 @@
-let handler = async (m, { args }) => {
+let handler = async (m, { args, conn }) => {
+  // ----------------- Verificar admin -----------------
+  const isAdmin = m.isGroup ? (m.sender && conn.participants[m.chat]?.find(p => p.id === m.sender)?.admin) : true;
+  if (!isAdmin) return m.reply('❌ Solo los administradores pueden usar este comando.');
+
   const text = args.join(' ');
-  if (!text) throw `❗ Uso: .setwelcome mensaje [link de imagen]\nVariables: @user, @group, @count, @desc`;
+  if (!text) return m.reply('❗ Uso: .setwelcome mensaje [link de imagen]\nVariables: @user, @group, @count, @desc');
 
-  let msg = text;
-  let img = null;
-
-  // Detectar link de imagen
+  // ----------------- Detectar link de imagen -----------------
   const match = text.match(/(https?:\/\/\S+\.(jpg|jpeg|png|gif))/i);
-  if (match) {
-    img = match[0];
-    msg = text.replace(match[0], '').trim();
-  }
+  if (!match) return m.reply('❌ Debes incluir un **link de imagen** al final del mensaje para usar este comando.');
 
-  // Guardar en DB
+  const img = match[0];
+  const msg = text.replace(match[0], '').trim();
+
+  // ----------------- Guardar en DB -----------------
   if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {};
   global.db.data.chats[m.chat].welcome = { text: msg, img };
 
-  m.reply(`✅ Mensaje de bienvenida configurado.\n\nTexto:\n${msg}\nImagen: ${img || 'default'}`);
+  m.reply(`✅ Mensaje de bienvenida configurado.\n\nTexto:\n${msg}\nImagen: ${img}`);
 };
 
 handler.command = /^setwelcome$/i;

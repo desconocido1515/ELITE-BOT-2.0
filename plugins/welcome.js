@@ -63,7 +63,7 @@ export async function before(m, { conn, groupMetadata }) {
       }
     };
 
-    // Intentar foto del usuario
+    // Foto del usuario o predeterminada
     let imgBuffer;
     try {
       const ppUrl = await conn.profilePictureUrl(userJid, 'image');
@@ -76,6 +76,7 @@ export async function before(m, { conn, groupMetadata }) {
     const memberCount = updatedGroup.participants.length;
     const user = `@${userJid.split('@')[0]}`;
     const groupName = groupMetadata.subject;
+    const groupDesc = updatedGroup.desc || "Sin descripción"; // <-- Descripción añadida
 
     // BIENVENIDA
     if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
@@ -86,7 +87,8 @@ export async function before(m, { conn, groupMetadata }) {
         caption = chat.welcome.text
           .replace(/@user/gi, user)
           .replace(/@group/gi, groupName)
-          .replace(/@count/gi, memberCount);
+          .replace(/@count/gi, memberCount)
+          .replace(/@desc/gi, groupDesc); // <-- reemplazo @desc
         if (chat.welcome.img) img = { url: chat.welcome.img };
       } else {
         caption = `╭━━━━━━━━⋆⋆━━━━━━━━─
@@ -94,6 +96,7 @@ export async function before(m, { conn, groupMetadata }) {
 ┃ 👤 ${user}
 ┃ 🏆 𝗖𝗟𝗔𝗡: ${groupName}
 ┃ 📊 Integrantes actuales: ${memberCount}
+┃ 📌 Descripción: ${groupDesc}
 ╰━━━━━━━━⋆⋆━━━━━━━━─`;
       }
 
@@ -118,13 +121,15 @@ export async function before(m, { conn, groupMetadata }) {
         caption = chat.bye.text
           .replace(/@user/gi, user)
           .replace(/@group/gi, groupName)
-          .replace(/@count/gi, memberCount);
+          .replace(/@count/gi, memberCount)
+          .replace(/@desc/gi, groupDesc); // <-- reemplazo @desc
         if (chat.bye.img) img = { url: chat.bye.img };
       } else {
         caption = `╭━━━━━━━━⋆⋆━━━━━━━━─
 ┃ 𝗦𝗘 𝗦𝗔𝗟𝗜Ó 𝗨𝗡𝗔 𝗕𝗔𝗦𝗨𝗥𝗔 🚮
 ┃ 👋 ${user}
 ┃ 📊 Integrantes actuales: ${memberCount}
+┃ 📌 Descripción: ${groupDesc}
 ╰━━━━━━━━⋆⋆━━━━━━━━─`;
       }
 

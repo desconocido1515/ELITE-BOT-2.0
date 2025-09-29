@@ -7,7 +7,7 @@ import pino from 'pino'
 import chalk from 'chalk'
 import util from 'util'
 import * as ws from 'ws'
-import { makeWASocket } from '../../lib/simple.js'
+import { makeWASocket } from '../lib/simple.js'
 import { fileURLToPath } from 'url'
 
 const wm = global.wm || 'EliteBot'

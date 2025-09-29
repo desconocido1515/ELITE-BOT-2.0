@@ -298,13 +298,13 @@ sock = makeWASocket(connectionOptions, { chats: oldChats })
 isInit = true
 }
 if (!isInit) {
-sock.ev.off('messages.upsert', sock.handler)
-sock.ev.off('group-participants.update', sock.participantsUpdate)
-sock.ev.off('groups.update', sock.groupsUpdate)
-sock.ev.off('message.delete', sock.onDelete)
-sock.ev.off('call', sock.onCall)
-sock.ev.off('connection.update', sock.connectionUpdate)
-sock.ev.off('creds.update', sock.credsUpdate)
+ sock.ev.off('messages.upsert', sock.handler)
+ if (typeof sock.participantsUpdate === 'function') sock.ev.off('group-participants.update', sock.participantsUpdate)
+ if (typeof sock.groupsUpdate === 'function') sock.ev.off('groups.update', sock.groupsUpdate)
+ if (typeof sock.onDelete === 'function') sock.ev.off('message.delete', sock.onDelete)
+ if (typeof sock.onCall === 'function') sock.ev.off('call', sock.onCall)
+ sock.ev.off('connection.update', sock.connectionUpdate)
+ sock.ev.off('creds.update', sock.credsUpdate)
 }
 sock.welcome = '👋 Bienvenido'
 sock.bye = '👋 Adiós'
@@ -316,18 +316,18 @@ sock.sIcon = 'Icono de grupo actualizado.'
 sock.sRevoke = 'Enlace de invitación restablecido.'
 
 sock.handler = handler.handler.bind(sock)
-sock.participantsUpdate = handler.participantsUpdate?.bind(sock)
-sock.groupsUpdate = handler.groupsUpdate?.bind(sock)
-sock.onDelete = handler.deleteUpdate?.bind(sock)
-sock.onCall = handler.callUpdate?.bind(sock)
+sock.participantsUpdate = typeof handler.participantsUpdate === 'function' ? handler.participantsUpdate.bind(sock) : undefined
+sock.groupsUpdate = typeof handler.groupsUpdate === 'function' ? handler.groupsUpdate.bind(sock) : undefined
+sock.onDelete = typeof handler.deleteUpdate === 'function' ? handler.deleteUpdate.bind(sock) : undefined
+sock.onCall = typeof handler.callUpdate === 'function' ? handler.callUpdate.bind(sock) : undefined
 sock.connectionUpdate = connectionUpdate.bind(sock)
 sock.credsUpdate = saveCreds.bind(sock, true)
 
 sock.ev.on(`messages.upsert`, sock.handler)
-sock.ev.on(`group-participants.update`, sock.participantsUpdate)
-sock.ev.on(`groups.update`, sock.groupsUpdate)
-sock.ev.on(`message.delete`, sock.onDelete)
-sock.ev.on(`call`, sock.onCall)
+if (typeof sock.participantsUpdate === 'function') sock.ev.on(`group-participants.update`, sock.participantsUpdate)
+if (typeof sock.groupsUpdate === 'function') sock.ev.on(`groups.update`, sock.groupsUpdate)
+if (typeof sock.onDelete === 'function') sock.ev.on(`message.delete`, sock.onDelete)
+if (typeof sock.onCall === 'function') sock.ev.on(`call`, sock.onCall)
 sock.ev.on(`connection.update`, sock.connectionUpdate)
 sock.ev.on(`creds.update`, sock.credsUpdate)
 isInit = false

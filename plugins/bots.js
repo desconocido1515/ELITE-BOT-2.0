@@ -57,11 +57,8 @@ let handler = async (m, { conn }) => {
                 const status = getBotStatus(bot);
                 
                 message += `${index + 1}. 💻 @${number}
-
-*│* ⚡ *Estado:* ${status}
-*│* 🕐 *Tiempo activo:* ${uptime}
-*│* 🔄 *Conexión:* 𝗘𝗦𝗧𝗔𝗕𝗟𝗘
-*╰─────────────────*${index < activeBots.length - 1 ? '\n\n' : ''}`;
+*Activo:* ${uptime}
+${index < activeBots.length - 1 ? '\n\n' : ''}`;
             });
         } else {
             message += `*╭─「 🔄 𝐒𝐔𝐁𝐁𝐎𝐓𝐒 」─*

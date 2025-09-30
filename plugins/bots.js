@@ -56,8 +56,8 @@ let handler = async (m, { conn }) => {
                 const uptime = getBotUptime(bot.user.jid);
                 const status = getBotStatus(bot);
                 
-                message += `*╭─「 🤖 𝐒𝐔𝐁𝐁𝐎𝐓 ${index + 1} 」─*
-*│* 📱 *ID:* @${number}
+                message += `${index + 1}. 💻 @${number}
+
 *│* ⚡ *Estado:* ${status}
 *│* 🕐 *Tiempo activo:* ${uptime}
 *│* 🔄 *Conexión:* 𝗘𝗦𝗧𝗔𝗕𝗟𝗘

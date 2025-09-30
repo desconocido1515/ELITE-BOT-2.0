@@ -246,22 +246,6 @@ if (m.isGroup) {
             isBotAdmin = botParticipant.admin === 'superadmin' || botParticipant.admin === 'admin'
         }
         
-        // DEBUG: Mostrar información de administradores (SOLO PARA TESTING)
-        if (m.text && typeof m.text === 'string') {
-            const currentPrefix = conn.prefix || global.prefix
-            if (typeof currentPrefix === 'string' && m.text.startsWith(currentPrefix)) {
-                console.log(chalk.cyan('🔍 DEBUG ADMIN:'), {
-                    sender: m.sender,
-                    userAdmin: user?.admin,
-                    isAdmin: isAdmin,
-                    isRAdmin: isRAdmin,
-                    isBotAdmin: isBotAdmin,
-                    command: m.text.split(' ')[0],
-                    totalParticipants: participants.length
-                })
-            }
-        }
-        
     } catch (error) {
         console.error(chalk.red('❌ Error al verificar administradores:'), error)
         // En caso de error, asumir que no es admin para seguridad
@@ -277,13 +261,6 @@ if (m.isGroup) {
 
         const ___dirname = path.join(path.dirname(fileURLToPath(import.meta.url)), './plugins')
         
-        // DEBUG: Contar plugins con before
-        let pluginsWithBefore = 0
-        for (let name in global.plugins) {
-            if (global.plugins[name]?.before) pluginsWithBefore++
-        }
-        console.log(`🔧 Plugins cargados: ${Object.keys(global.plugins).length}, con before: ${pluginsWithBefore}`)
-
         for (let name in global.plugins) {
             let plugin = global.plugins[name]
             if (!plugin)

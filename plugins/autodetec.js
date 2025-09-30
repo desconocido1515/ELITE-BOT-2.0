@@ -64,6 +64,7 @@ handler.before = async function (m, { conn }) {
   const noadmingp = `❱❱ 𝙄𝙉𝙁𝙊𝙍𝙈𝘼𝘾𝙄𝙊́𝙉 ❰❰\n\n👤 @${stubUser?.split('@')[0]}\n» 𝙔𝘼 𝙉𝙊 𝙀𝙎 𝘼𝘿𝙈𝙄𝙉.\n\n» 𝘼𝘾𝘾𝙄𝙊́𝙉 𝙍𝙀𝘼𝙇𝙄𝙕𝘼𝘿𝘼 𝙋𝙊𝙍:\n${usuario}`
   const descChange = `📝 ${usuario} ha cambiado la descripción del grupo.\n\n> 🔹 Nueva descripción: _${m.messageStubParameters?.[0] || ''}_`
   const memberAddMode = `👥 ${usuario} ha cambiado el modo de adición de miembros.\n\n> 🔹 Nuevo modo: _${m.messageStubParameters?.[0] || ''}_`
+  const joinApprovalMode = `🔐 ${usuario} ha cambiado el modo de aprobación para unirse al grupo.\n\n> 🔹 Nuevo modo: _${m.messageStubParameters?.[0] || ''}_`
 
   // Detectar tipos de stubs
   switch (m.messageStubType) {
@@ -91,8 +92,11 @@ handler.before = async function (m, { conn }) {
     case WAMessageStubType.GROUP_CHANGE_DESCRIPTION:
       await conn.sendMessage(m.chat, { text: descChange, mentions: [m.sender] }, { quoted: fkontak })
       break
-    case 171: // ✅ GROUP_MEMBER_ADD_MODE
+    case 171: // GROUP_MEMBER_ADD_MODE
       await conn.sendMessage(m.chat, { text: memberAddMode, mentions: [m.sender] }, { quoted: fkontak })
+      break
+    case 145: // GROUP_MEMBERSHIP_JOIN_APPROVAL_MODE
+      await conn.sendMessage(m.chat, { text: joinApprovalMode, mentions: [m.sender] }, { quoted: fkontak })
       break
     default:
       console.log({

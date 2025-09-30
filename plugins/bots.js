@@ -29,19 +29,67 @@ let handler = async (m, { conn }) => {
 
         console.log(`✅ Subbots activos: ${activeBots.length}`);
         
-        if (activeBots.length === 0) {
-            return m.reply('🤖 No hay subbots conectados en este momento');
+        // =============================================
+        // 🤖 BOT PRINCIPAL
+        // =============================================
+        let message = `*╔═══════════════════╗*
+*║    🤖 𝐒𝐔𝐁𝐁𝐎𝐓𝐒 𝐀𝐂𝐓𝐈𝐕𝐎𝐒    ║*
+*╚═══════════════════╝*\n\n`;
+
+        // Agregar bot principal primero
+        if (conn && conn.user && conn.user.jid) {
+            const mainBotNumber = conn.user.jid.split('@')[0];
+            const mainUptime = getBotUptime(conn.user.jid, true);
+            
+            message += `*╭─「 🤖 𝐁𝐎𝐓 𝐏𝐑𝐈𝐍𝐂𝐈𝐏𝐀𝐋 」─*
+*│* 📱 *ID:* @${mainBotNumber}
+*│* ⚡ *Estado:* 𝗢𝗣𝗘𝗥𝗔𝗧𝗜𝗩𝗢
+*│* 🕐 *Tiempo activo:* ${mainUptime}
+*│* 🔧 *Versión:* 𝗣𝗥𝗢𝗧𝗢𝗖𝗢𝗟𝗢-𝗫
+*╰─────────────────*\n\n`;
         }
 
-        // Generar información
-        let message = `*🤖 SUBBOTS CONECTADOS*\n*Total:* ${activeBots.length}\n\n`;
-        
-        activeBots.forEach((bot, index) => {
-            const number = bot.user.jid.split('@')[0];
-            const uptime = getBotUptime(bot.user.jid);
-            
-            message += `*${index + 1}.* @${number}\n   ⏰ *Uptime:* ${uptime}\n\n`;
-        });
+        // =============================================
+        // 🔄 SUBBOTS CONECTADOS
+        // =============================================
+        if (activeBots.length > 0) {
+            message += `*╭─「 🔄 𝐒𝐔𝐁𝐁𝐎𝐓𝐒 」─*
+*│* 📊 *Total conectados:* ${activeBots.length}
+*╰─────────────────*\n\n`;
+
+            activeBots.forEach((bot, index) => {
+                const number = bot.user.jid.split('@')[0];
+                const uptime = getBotUptime(bot.user.jid);
+                const status = getBotStatus(bot);
+                
+                message += `*╭─「 🤖 𝐒𝐔𝐁𝐁𝐎𝐓 ${index + 1} 」─*
+*│* 📱 *ID:* @${number}
+*│* ⚡ *Estado:* ${status}
+*│* 🕐 *Tiempo activo:* ${uptime}
+*│* 🔄 *Conexión:* 𝗘𝗦𝗧𝗔𝗕𝗟𝗘
+*╰─────────────────*${index < activeBots.length - 1 ? '\n\n' : ''}`;
+            });
+        } else {
+            message += `*╭─「 🔄 𝐒𝐔𝐁𝐁𝐎𝐓𝐒 」─*
+*│* ❌ *No hay subbots conectados*
+*│* 💡 *Usa .serbot para activar*
+*╰─────────────────*\n\n`;
+        }
+
+        // =============================================
+        // 📊 ESTADÍSTICAS DEL SISTEMA
+        // =============================================
+        message += `\n*╔═══════════════════╗*
+*║    📊 𝐄𝐒𝐓𝐀𝐃𝐈𝐒𝐓𝐈𝐂𝐀𝐒    ║*
+*╚═══════════════════╝*
+*┌─「 🖥️  𝐒𝐈𝐒𝐓𝐄𝐌𝐀 」─*
+*│* 🤖 *Total bots:* ${activeBots.length + 1}
+*│* ⚡ *Bots activos:* ${activeBots.length + 1}
+*│* 🔧 *Protocolo:* 𝗪𝗵𝗮𝘁𝘀𝗔𝗽𝗽-𝗕𝗼𝘁
+*│* 🛡️  *Estado:* 𝗢𝗣𝗘𝗥𝗔𝗧𝗜𝗩𝗢
+*└─────────────────*
+
+*🔊 _Sistema de bots funcionando óptimamente_*`;
 
         await conn.sendMessage(m.chat, { 
             text: message, 
@@ -67,17 +115,25 @@ if (!global.botUptimes) {
 function initializeUptime() {
     if (!global.conns || !Array.isArray(global.conns)) return;
     
+    // Registrar bot principal
+    if (global.conn && global.conn.user && global.conn.user.jid) {
+        const mainJid = global.conn.user.jid;
+        if (!global.botUptimes.has(mainJid)) {
+            global.botUptimes.set(mainJid, Date.now());
+            console.log(`⏰ Uptime inicializado para BOT PRINCIPAL: ${mainJid}`);
+        }
+    }
+    
+    // Registrar subbots
     global.conns.forEach(bot => {
         if (bot && bot.user && bot.user.jid) {
             const botJid = bot.user.jid;
             
-            // Si el bot no tiene uptime registrado, inicializarlo
             if (!global.botUptimes.has(botJid)) {
                 global.botUptimes.set(botJid, Date.now());
                 console.log(`⏰ Uptime inicializado para: ${botJid}`);
             }
             
-            // También asignar al bot directamente por si acaso
             if (!bot.uptime) {
                 bot.uptime = Date.now();
             }
@@ -86,22 +142,34 @@ function initializeUptime() {
 }
 
 // Función para obtener el uptime formateado
-function getBotUptime(botJid) {
+function getBotUptime(botJid, isMainBot = false) {
     if (!global.botUptimes.has(botJid)) {
-        // Si no existe, inicializar
         global.botUptimes.set(botJid, Date.now());
-        return 'Recién conectado';
+        return isMainBot ? '𝗦𝗜𝗦𝗧𝗘𝗠𝗔 𝗜𝗡𝗜𝗖𝗜𝗔𝗗𝗢' : '𝗜𝗡𝗜𝗖𝗜𝗔𝗡𝗗𝗢 𝗦𝗜𝗦𝗧𝗘𝗠𝗔';
     }
     
     const startTime = global.botUptimes.get(botJid);
     const uptimeMs = Date.now() - startTime;
     
-    return formatUptime(uptimeMs);
+    return formatUptimeRobotic(uptimeMs);
 }
 
-// Función mejorada para formatear tiempo
-function formatUptime(ms) {
-    if (ms < 1000) return '0 segundos';
+// Función para obtener estado del bot
+function getBotStatus(bot) {
+    if (!bot.ws || !bot.ws.socket) return '𝗗𝗘𝗦𝗖𝗢𝗡𝗘𝗖𝗧𝗔𝗗𝗢';
+    
+    switch(bot.ws.socket.readyState) {
+        case 0: return '𝗖𝗢𝗡𝗘𝗖𝗧𝗔𝗡𝗗𝗢';
+        case 1: return '𝗢𝗣𝗘𝗥𝗔𝗧𝗜𝗩𝗢';
+        case 2: return '𝗖𝗘𝗥𝗥𝗔𝗡𝗗𝗢';
+        case 3: return '𝗗𝗘𝗦𝗖𝗢𝗡𝗘𝗖𝗧𝗔𝗗𝗢';
+        default: return '𝗘𝗦𝗧𝗔𝗗𝗢 𝗗𝗘𝗦𝗖𝗢𝗡𝗢𝗖𝗜𝗗𝗢';
+    }
+}
+
+// Función mejorada para formatear tiempo con estilo robótico
+function formatUptimeRobotic(ms) {
+    if (ms < 1000) return '𝟬 𝗦𝗘𝗚𝗨𝗡𝗗𝗢𝗦';
     
     const seconds = Math.floor(ms / 1000) % 60;
     const minutes = Math.floor(ms / (1000 * 60)) % 60;
@@ -109,12 +177,12 @@ function formatUptime(ms) {
     const days = Math.floor(ms / (1000 * 60 * 60 * 24));
 
     const parts = [];
-    if (days > 0) parts.push(`${days} día${days > 1 ? 's' : ''}`);
-    if (hours > 0) parts.push(`${hours} hora${hours > 1 ? 's' : ''}`);
-    if (minutes > 0) parts.push(`${minutes} minuto${minutes > 1 ? 's' : ''}`);
-    if (seconds > 0) parts.push(`${seconds} segundo${seconds > 1 ? 's' : ''}`);
+    if (days > 0) parts.push(`${days} ${days > 1 ? '𝗗𝗜́𝗔𝗦' : '𝗗𝗜́𝗔'}`);
+    if (hours > 0) parts.push(`${hours} ${hours > 1 ? '𝗛𝗢𝗥𝗔𝗦' : '𝗛𝗢𝗥𝗔'}`);
+    if (minutes > 0) parts.push(`${minutes} ${minutes > 1 ? '𝗠𝗜𝗡𝗨𝗧𝗢𝗦' : '𝗠𝗜𝗡𝗨𝗧𝗢'}`);
+    if (seconds > 0) parts.push(`${seconds} ${seconds > 1 ? '𝗦𝗘𝗚𝗨𝗡𝗗𝗢𝗦' : '𝗦𝗘𝗚𝗨𝗡𝗗𝗢'}`);
 
-    return parts.join(', ') || '0 segundos';
+    return parts.join(', ') || '𝟬 𝗦𝗘𝗚𝗨𝗡𝗗𝗢𝗦';
 }
 
 // =============================================

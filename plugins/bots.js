@@ -32,9 +32,8 @@ let handler = async (m, { conn }) => {
         // =============================================
         // 🤖 BOT PRINCIPAL
         // =============================================
-        let message = `*╔═══════════════════╗*
-*║    🤖 𝐒𝐔𝐁𝐁𝐎𝐓𝐒 𝐀𝐂𝐓𝐈𝐕𝐎𝐒    ║*
-*╚═══════════════════╝*\n\n`;
+        let message = `*ProyectoX // EBG*
+*Conectados: ${activeBots.length + 1}*\n\n`;
 
         // Agregar bot principal primero
         if (conn && conn.user && conn.user.jid) {

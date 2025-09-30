@@ -467,7 +467,7 @@ console.log(chalk.bold.red(`Error inesperado al seguir canales: ${e.message}`));
 }}
 
 // Verificación periódica (solo reconecta los desconectados)
-setInterval(() => checkSubBots(false), 120000);
+setInterval(() => checkSubBots(false), 600000);
 
 // === SOLUCIÓN PARA RECONEXIÓN INMEDIATA DESPUÉS DE RESTART ===
 // Esto se ejecuta automáticamente cuando el bot principal se inicia

@@ -1,5 +1,10 @@
 import fetch from 'node-fetch';
 
+// 🌸 Definir URLs de tus servidores
+const masha = 'https://api.masha.com';
+const alya = 'https://api.alya.com';
+const masachika = 'https://api.masachika.com';
+
 const SERVERS = [
   { name: 'Servidor Masha', baseUrl: masha },
   { name: 'Servidor Alya', baseUrl: alya },
@@ -18,8 +23,9 @@ async function tryServers(servers, endpoint, queryParam) {
   for (const server of shuffledServers) {
     try {
       const url = `${server.baseUrl}${endpoint}${encodeURIComponent(queryParam)}`;
-      const res = await fetch(url);
+      console.log('Intentando URL:', url); // Depuración
 
+      const res = await fetch(url);
       if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
 
       const json = await res.json();
@@ -32,17 +38,29 @@ async function tryServers(servers, endpoint, queryParam) {
     }
   }
 
-  throw '❌ Todos los servidores fallaron. Intenta más tarde.';
+  throw new Error('❌ Todos los servidores fallaron. Intenta más tarde.');
 }
 
 let handler = async (m, { text, conn, command }) => {
-  if (!text) return m.reply('🔍 Ingresa el nombre de una canción. Ej: *.play Aishite Ado*');
+  if (!text) {
+    return await conn.sendMessage(
+      m.chat,
+      { text: '🔍 Ingresa el nombre de una canción. Ej: *.play Aishite Ado*' },
+      { quoted: m }
+    );
+  }
 
   try {
     // Buscar video
     const { json: searchJson, server: searchServer } = await tryServers(SERVERS, '/search_youtube?query=', text);
 
-    if (!searchJson.results?.length) return m.reply('⚠️ No se encontraron resultados.');
+    if (!searchJson.results?.length) {
+      return await conn.sendMessage(
+        m.chat,
+        { text: '⚠️ No se encontraron resultados.' },
+        { quoted: m }
+      );
+    }
 
     const video = searchJson.results[0];
     const thumb = video.thumbnails.find(t => t.width === 720)?.url || video.thumbnails[0]?.url;
@@ -58,14 +76,19 @@ let handler = async (m, { text, conn, command }) => {
 │━━━━━━━━━━━━━━━━━━━━━━━
 │💿 𝒯тιтυℓσ: ${videoTitle} 🌸
 │⏱️ Dυɾαƈισɳ: ${duration}s
-│👀 νιѕтαѕ: ${video.views.toLocaleString()}
-│🎤 Aυƚσɾ: ${video.channel}
+│👀 νιѕтαѕ: ${video.views?.toLocaleString() || 0}
+│🎤 Aυƚσɾ: ${video.channel || 'Desconocido'}
 │🔗 ℓιηк: ${videoUrl}
 │📡 รε૨ѵε૨: ${searchServer}-nyan~ 🐾
 ╰─⃝🌸⃝─〔  Enviando con amor 〕─⃝🌸⃝─╯
 `.trim();
 
-    await conn.sendMessage(m.chat, { image: { url: thumb }, caption: msgInfo }, { quoted: m });
+    // Enviar miniatura y datos
+    await conn.sendMessage(
+      m.chat,
+      { image: { url: thumb }, caption: msgInfo },
+      { quoted: m }
+    );
 
     // Intentar descarga con endpoint principal
     let downloadJson;
@@ -73,22 +96,37 @@ let handler = async (m, { text, conn, command }) => {
       const { json } = await tryServers(SERVERS, '/download_audio?url=', videoUrl);
       downloadJson = json;
     } catch (err) {
-      console.error('⚠️ Endpoint principal de descarga falló, intentando con el respaldo...');
+      console.warn('⚠️ Endpoint principal de descarga falló, intentando con el respaldo...');
       const { json } = await tryServers(SERVERS, '/download_audioV2?url=', videoUrl);
       downloadJson = json;
     }
 
-    if (!downloadJson?.file_url) return m.reply('❌ No se pudo descargar el audio.');
+    if (!downloadJson?.file_url) {
+      return await conn.sendMessage(
+        m.chat,
+        { text: '❌ No se pudo descargar el audio.' },
+        { quoted: m }
+      );
+    }
 
-    await conn.sendMessage(m.chat, {
-      audio: { url: downloadJson.file_url },
-      mimetype: 'audio/mpeg',
-      fileName: `${downloadJson.title || videoTitle}.mp3`
-    }, { quoted: m });
+    // Enviar audio
+    await conn.sendMessage(
+      m.chat,
+      {
+        audio: { url: downloadJson.file_url },
+        mimetype: 'audio/mpeg',
+        fileName: `${downloadJson.title || videoTitle}.mp3`
+      },
+      { quoted: m }
+    );
 
   } catch (e) {
     console.error(e);
-    m.reply('❌ Error al procesar tu solicitud.');
+    await conn.sendMessage(
+      m.chat,
+      { text: '❌ Error al procesar tu solicitud.' },
+      { quoted: m }
+    );
   }
 };
 

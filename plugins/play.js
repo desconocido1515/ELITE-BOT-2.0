@@ -33,16 +33,26 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
 
         if (['play', 'yta', 'ytmp3', 'playaudio'].includes(command)) {
             const filePath = path.join(tempDir, `${title}.mp3`)
-            await downloadAudio(url, filePath)
-            await conn.sendMessage(m.chat, { audio: fs.readFileSync(filePath), fileName: `${title}.mp3`, mimetype: 'audio/mpeg' }, { quoted: m })
-            await m.react('✔️')
-            fs.unlinkSync(filePath) // borrar temporal
+            try {
+                await downloadAudio(url, filePath)
+                await conn.sendMessage(m.chat, { audio: fs.readFileSync(filePath), fileName: `${title}.mp3`, mimetype: 'audio/mpeg' }, { quoted: m })
+                await m.react('✔️')
+            } catch (e) {
+                return conn.reply(m.chat, '⚠ No se pudo obtener el audio. El video puede estar eliminado, privado o ser un live stream.', m)
+            } finally {
+                if (fs.existsSync(filePath)) fs.unlinkSync(filePath)
+            }
         } else if (['play2', 'ytv', 'ytmp4', 'mp4'].includes(command)) {
             const filePath = path.join(tempDir, `${title}.mp4`)
-            await downloadVideo(url, filePath)
-            await conn.sendFile(m.chat, fs.readFileSync(filePath), `${title}.mp4`, `> ❀ ${title}`, m)
-            await m.react('✔️')
-            fs.unlinkSync(filePath)
+            try {
+                await downloadVideo(url, filePath)
+                await conn.sendFile(m.chat, fs.readFileSync(filePath), `${title}.mp4`, `> ❀ ${title}`, m)
+                await m.react('✔️')
+            } catch (e) {
+                return conn.reply(m.chat, '⚠ No se pudo obtener el video. El video puede estar eliminado, privado o ser un live stream.', m)
+            } finally {
+                if (fs.existsSync(filePath)) fs.unlinkSync(filePath)
+            }
         }
 
     } catch (e) {
@@ -67,6 +77,7 @@ function formatViews(views) {
 }
 
 async function downloadAudio(url, filePath) {
+    if (!await ytdl.validateURL(url)) throw new Error('URL inválida o video no disponible')
     return new Promise((resolve, reject) => {
         const stream = ytdl(url, { filter: 'audioonly', quality: 'highestaudio' })
         stream.pipe(fs.createWriteStream(filePath))
@@ -76,6 +87,7 @@ async function downloadAudio(url, filePath) {
 }
 
 async function downloadVideo(url, filePath) {
+    if (!await ytdl.validateURL(url)) throw new Error('URL inválida o video no disponible')
     return new Promise((resolve, reject) => {
         const stream = ytdl(url, { quality: 'highestvideo' })
         stream.pipe(fs.createWriteStream(filePath))

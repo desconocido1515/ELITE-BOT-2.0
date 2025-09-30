@@ -40,12 +40,8 @@ let handler = async (m, { conn }) => {
             const mainBotNumber = conn.user.jid.split('@')[0];
             const mainUptime = getBotUptime(conn.user.jid, true);
             
-            message += `*╭─「 🤖 𝐁𝐎𝐓 𝐏𝐑𝐈𝐍𝐂𝐈𝐏𝐀𝐋 」─*
-*│* 📱 *ID:* @${mainBotNumber}
-*│* ⚡ *Estado:* 𝗢𝗣𝗘𝗥𝗔𝗧𝗜𝗩𝗢
-*│* 🕐 *Tiempo activo:* ${mainUptime}
-*│* 🔧 *Versión:* 𝗣𝗥𝗢𝗧𝗢𝗖𝗢𝗟𝗢-𝗫
-*╰─────────────────*\n\n`;
+            message += `👑 @${mainBotNumber}
+*Activo:* ${mainUptime}\n`;
         }
 
         // =============================================

@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import fetch from 'node-fetch'
-import { readdirSync, unlinkSync, existsSync, promises as fs, rmSync } from 'fs'
+import { promises as fs } from 'fs'
 import path from 'path'
 import { WAMessageStubType } from '@whiskeysockets/baileys'
 
@@ -41,7 +41,7 @@ handler.before = async function (m, { conn }) {
         participant: "0@s.whatsapp.net"
     }
 
-    const usuario = `@${m.sender.split`@`[0]}`
+    const usuario = '@' + m.sender.split('@')[0]
     let pp = await conn.profilePictureUrl(m.chat, 'image').catch(() => null) || 'https://files.catbox.moe/xr2m6u.jpg'
 
     // Mensajes predefinidos
@@ -50,10 +50,10 @@ handler.before = async function (m, { conn }) {
     const edit = `⚙️ ${usuario} ha ajustado la configuración del grupo.\n\n> 🔒 Ahora *${m.messageStubParameters?.[0] == 'on'? 'solo los administradores': 'todos'}* pueden configurar el grupo.`
     const newlink = `🔗 *¡El enlace del grupo ha sido restablecido!* 🔗\n\n> 💫 Acción realizada por: ${usuario}`
     const status = `❱❱ 𝗢́𝗥𝗗𝗘𝗡𝗘𝗦 𝗥𝗘𝗖𝗜𝗕𝗜𝗗𝗔𝗦 ❰❰\n\n👤 ${m.messageStubParameters?.[0] == 'on'? '𝗖𝗘𝗥𝗥𝗔𝗗𝗢': '𝗔𝗕𝗜𝗘𝗥𝗧𝗢'} 𝗣𝗢𝗥 ${usuario}\n\n> 💬 Ahora *${m.messageStubParameters?.[0] == 'on'? 'solo los administradores': 'todos'}* pueden enviar mensajes.`
-    const admingp = `❱❱ 𝙁𝙀𝙇𝙄𝘾𝙄𝘿𝘼𝘿𝙀𝙎 ❰❰\n\n👤 @${m.messageStubParameters?.[0]?.split`@`[0] || ''}\n» 𝘼𝙃𝙊𝙍𝘼 𝙀𝙎 𝘼𝘿𝙈𝙄𝙉.\n\n» 𝘼𝘾𝘾𝙄𝙊́𝙉 𝙍𝙀𝘼𝙇𝙄𝙕𝘼𝘿𝘼 𝙋𝙊𝙍:\n${usuario}`
-    const noadmingp = `❱❱ 𝙄𝙉𝙁𝙊𝙍𝙈𝘼𝘾𝙄𝙊́𝙉 ❰❰\n\n👤 @${m.messageStubParameters?.[0]?.split`@`[0] || ''}\n» 𝙔𝘼 𝙉𝙊 𝙀𝙎 𝘼𝘿𝙈𝙄𝙉.\n\n» 𝘼𝘾𝘾𝙄𝙊́𝙉 𝙍𝙀𝘼𝙇𝙄𝙕𝘼𝘿𝘼 𝙋𝙊𝙍:\n${usuario}`
+    const admingp = `❱❱ 𝙁𝙀𝙇𝙄𝘾𝙄𝘿𝘼𝘿𝙀𝙎 ❰❰\n\n👤 @${((m.messageStubParameters?.[0]?.split('@')[0]) || '')}\n» 𝘼𝙃𝙊𝙍𝘼 𝙀𝙎 𝘼𝘿𝙈𝙄𝙉.\n\n» 𝘼𝘾𝘾𝙄𝙊́𝙉 𝙍𝙀𝘼𝙇𝙄𝙕𝘼𝘿𝘼 𝙋𝙊𝙍:\n${usuario}`
+    const noadmingp = `❱❱ 𝙄𝙉𝙁𝙊𝙍𝙈𝘼𝘾𝙄𝙊́𝙉 ❰❰\n\n👤 @${((m.messageStubParameters?.[0]?.split('@')[0]) || '')}\n» 𝙔𝘼 𝙉𝙊 𝙀𝙎 𝘼𝘿𝙈𝙄𝙉.\n\n» 𝘼𝘾𝘾𝙄𝙊́𝙉 𝙍𝙀𝘼𝙇𝙄𝙕𝘼𝘿𝘼 𝙋𝙊𝙍:\n${usuario}`
 
-    // Limpiar sessiones antiguas
+    // Limpiar sesiones antiguas
     const uniqid = (m.isGroup ? m.chat : m.sender).split('@')[0]
     const sessionPath = './GataBotSession/'
     for (const file of await fs.readdir(sessionPath)) {

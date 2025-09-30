@@ -41,7 +41,7 @@ let handler = async (m, { conn }) => {
             const mainUptime = getBotUptime(conn.user.jid, true);
             
             message += `Elite Bot Global 2023
-            👑 @${mainBotNumber}
+👑 @${mainBotNumber}
 *Activo:* ${mainUptime}\n`;
         }
 
@@ -49,9 +49,7 @@ let handler = async (m, { conn }) => {
         // 🔄 SUBBOTS CONECTADOS
         // =============================================
         if (activeBots.length > 0) {
-            message += `*╭─「 🔄 𝐒𝐔𝐁𝐁𝐎𝐓𝐒 」─*
-*│* 📊 *Total conectados:* ${activeBots.length}
-*╰─────────────────*\n\n`;
+            message += `\n`;
 
             activeBots.forEach((bot, index) => {
                 const number = bot.user.jid.split('@')[0];

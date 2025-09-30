@@ -1,143 +1,73 @@
-import ws from 'ws';
-import fs, { readdirSync } from 'fs';
-import path from 'path';
-
-let confirm = {}
-
-let handler = async (m, { conn, usedPrefix, args, participants }) => {
-  try {
-    // Verificar que global.conns existe y es un array
-    const conns = global.conns || [];
-    
-    // Filtrar conexiones activas de manera más segura
-    const users = conns.filter((connInstance) => {
-      try {
-        return connInstance && 
-               connInstance.user && 
-               connInstance.user.jid &&
-               connInstance.ws && 
-               connInstance.ws.socket && 
-               connInstance.ws.socket.readyState !== ws.CLOSED;
-      } catch (error) {
-        return false;
-      }
-    });
-
-    // Generar la información de cada subbot
-    const txto = await Promise.all(users.map(async (v, index) => {
-      try {
-        // Calcular uptime de manera segura
-        const uptimeMs = v.uptime ? (Date.now() - v.uptime) : 0;
-        const uptime = await ajusteTiempo(uptimeMs);
-        const jidNumber = v.user.jid.replace(/[^0-9]/g, '');
-        
-        return `*${index + 1}. 💻* @${jidNumber}\n*Activo :* ${uptime}`;
-      } catch (error) {
-        return `*${index + 1}. 💻* Error obteniendo datos`;
-      }
-    }));
-
-    let message = txto.join('\n\n');
-    const replyMessage = message.length === 0 ? '*No hay subbots conectados*' : message;
-    
-    let totalUsers = users.length;
-
-    let SB = `*ProyectoX // EBG*\n*Conectados: ${totalUsers}*\n\n${replyMessage}`;
-
-    // Enviar mensaje con menciones
-    let q = await conn.sendMessage(m.chat, { 
-      text: SB, 
-      mentions: conn.parseMention(SB) 
-    }, { 
-      quoted: m 
-    });
-
-    // Guardar confirmación
-    confirm[m.sender] = {
-      sender: m.sender,
-      q: q,
-      totalUsers: totalUsers,
-      time: setTimeout(() => {
-        delete confirm[m.sender];
-      }, 60 * 1000) // 1 minuto
-    }
-    
-    console.log('SubbotsInfo: ', Object.keys(confirm).length, 'usuarios consultaron');
-
-  } catch (error) {
-    console.error('Error en handler de subbots:', error);
-    await conn.reply(m.chat, '❌ Error al obtener información de los subbots', m);
-  }
-}
-
-handler.command = handler.help = ['sub', 'bots', 'subsbots'];
-handler.tags = ['jadibot'];
-
-handler.before = async function before(m, { conn }) {
-  if (m.text.toLowerCase() === 'botsmain') {
+let handler = async (m, { conn }) => {
     try {
-      const confirmacion = Object.values(confirm).find(c => c.sender === m.sender);
-      if (!confirmacion) {
-        await conn.reply(m.chat, '❌ Primero usa el comando *.subbots* para ver la información', m);
-        return;
-      }
-
-      // Verificar que la carpeta existe antes de leerla
-      let bots = '';
-      try {
-        if (global.authFolderAniMX && fs.existsSync(global.authFolderAniMX)) {
-          const files = readdirSync(global.authFolderAniMX);
-          for (let i of files) {
-            const bot = i.match(/\d+/g);
-            if (bot && bot[0]) {
-              bots += `@${bot[0]}\n`;
-            }
-          }
-        } else {
-          bots = 'Carpeta de auth no configurada';
+        console.log('🔧 Comando subbots ejecutándose...');
+        
+        // Verificar conexiones
+        if (!global.conns || !Array.isArray(global.conns)) {
+            console.log('❌ global.conns no configurado');
+            return m.reply('❌ Sistema de subbots no configurado');
         }
-      } catch (folderError) {
-        bots = 'Error leyendo carpeta de auth';
-      }
 
-      bots = bots.trim() || 'No se encontraron bots';
+        console.log(`📊 Conexiones encontradas: ${global.conns.length}`);
+        
+        // Filtrar conexiones activas
+        let activeBots = [];
+        
+        for (let bot of global.conns) {
+            if (bot && bot.user && bot.user.jid) {
+                // Verificar estado simple
+                const isActive = bot.ws && bot.ws.socket && bot.ws.socket.readyState === 1; // 1 = OPEN
+                
+                if (isActive) {
+                    activeBots.push(bot);
+                }
+            }
+        }
 
-      await conn.sendMessage(m.chat, {
-        text: `*Bots actuales:*\n${bots}`,
-        mentions: conn.parseMention(bots)
-      }, { 
-        quoted: m 
-      });
+        console.log(`✅ Subbots activos: ${activeBots.length}`);
+        
+        if (activeBots.length === 0) {
+            return m.reply('🤖 No hay subbots conectados en este momento');
+        }
+
+        // Generar información
+        let message = `*🤖 SUBBOTS CONECTADOS*\n*Total:* ${activeBots.length}\n\n`;
+        
+        activeBots.forEach((bot, index) => {
+            const number = bot.user.jid.split('@')[0];
+            const uptime = bot.uptime ? formatUptime(Date.now() - bot.uptime) : 'Recién conectado';
+            
+            message += `*${index + 1}.* @${number}\n   ⏰ *Uptime:* ${uptime}\n\n`;
+        });
+
+        await conn.sendMessage(m.chat, { 
+            text: message, 
+            mentions: conn.parseMention(message) 
+        }, { quoted: m });
 
     } catch (error) {
-      console.error('Error en before de subbots:', error);
-      await conn.reply(m.chat, '❌ Error al obtener lista de bots', m);
+        console.error('❌ Error en comando subbots:', error);
+        m.reply('❌ Error al obtener información de subbots');
     }
-  }
 }
 
-export default handler;
+function formatUptime(ms) {
+    const seconds = Math.floor(ms / 1000) % 60;
+    const minutes = Math.floor(ms / (1000 * 60)) % 60;
+    const hours = Math.floor(ms / (1000 * 60 * 60)) % 24;
+    const days = Math.floor(ms / (1000 * 60 * 60 * 24));
 
-async function ajusteTiempo(ms) {
-  if (ms <= 0) return '0 segundos';
-  
-  const segundos = Math.floor(ms / 1000);
-  const minutos = Math.floor(segundos / 60);
-  const horas = Math.floor(minutos / 60);
-  const días = Math.floor(horas / 24);
+    let parts = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+    if (seconds > 0) parts.push(`${seconds}s`);
 
-  const segs = segundos % 60;
-  const mins = minutos % 60;
-  const hrs = horas % 24;
-
-  let resultado = "";
-  if (días > 0) resultado += `${días} día${días > 1 ? 's' : ''}, `;
-  if (hrs > 0) resultado += `${hrs} hora${hrs > 1 ? 's' : ''}, `;
-  if (mins > 0) resultado += `${mins} minuto${mins > 1 ? 's' : ''}, `;
-  if (segs > 0) resultado += `${segs} segundo${segs > 1 ? 's' : ''}`;
-
-  // Eliminar coma final si existe
-  resultado = resultado.replace(/,\s*$/, '');
-  
-  return resultado || '0 segundos';
+    return parts.join(' ') || '0s';
 }
+
+handler.help = ['subbots', 'bots', 'sub']
+handler.tags = ['subbots']
+handler.command = ['subbots', 'bots', 'sub']
+
+export default handler

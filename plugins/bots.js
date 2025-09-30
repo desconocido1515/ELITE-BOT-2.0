@@ -70,7 +70,7 @@ ${index < activeBots.length - 1 ? '\n' : ''}`;
         // =============================================
         // 📊 ESTADÍSTICAS DEL SISTEMA
         // =============================================
-        message += `*🔊 _Sistema de bots funcionando óptimamente_*`;
+        message += `\n*🔊 _Sistema de bots funcionando óptimamente_*`;
 
         await conn.sendMessage(m.chat, { 
             text: message, 

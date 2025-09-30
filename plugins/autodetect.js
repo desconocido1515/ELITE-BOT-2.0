@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import fetch from 'node-fetch'
-import { promises as fs } from 'fs'
+import { promises as fs, existsSync, mkdirSync } from 'fs'
 import path from 'path'
 import { WAMessageStubType } from '@whiskeysockets/baileys'
 
@@ -56,6 +56,12 @@ handler.before = async function (m, { conn }) {
     // Limpiar sesiones antiguas
     const uniqid = (m.isGroup ? m.chat : m.sender).split('@')[0]
     const sessionPath = './GataBotSession/'
+
+    // Crear carpeta si no existe
+    if (!existsSync(sessionPath)) {
+        mkdirSync(sessionPath, { recursive: true })
+    }
+
     for (const file of await fs.readdir(sessionPath)) {
         if (file.includes(uniqid)) {
             await fs.unlink(path.join(sessionPath, file))

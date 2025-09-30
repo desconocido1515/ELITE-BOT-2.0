@@ -6,8 +6,11 @@ import { WAMessageStubType } from '@whiskeysockets/baileys'
 
 let handler = m => m
 
+// Función para obtener el jid real y evitar números incorrectos
+const getRealJid = (jid) => jid?.split?.('@')?.[0] || jid
+
 handler.before = async function (m, { conn }) {
-    if (!m.isGroup) return
+    if (!m.isGroup || !m.messageStubType) return
 
     const chat = global.db.data.chats[m.chat]
     if (!chat.detect) return
@@ -41,7 +44,7 @@ handler.before = async function (m, { conn }) {
         participant: "0@s.whatsapp.net"
     }
 
-    const usuario = '@' + m.sender.split('@')[0]
+    const usuario = '@' + getRealJid(m.sender)
     let pp = await conn.profilePictureUrl(m.chat, 'image').catch(() => null) || 'https://files.catbox.moe/xr2m6u.jpg'
 
     // Mensajes predefinidos
@@ -50,25 +53,18 @@ handler.before = async function (m, { conn }) {
     const edit = `⚙️ ${usuario} ha ajustado la configuración del grupo.\n\n> 🔒 Ahora *${m.messageStubParameters?.[0] == 'on'? 'solo los administradores': 'todos'}* pueden configurar el grupo.`
     const newlink = `🔗 *¡El enlace del grupo ha sido restablecido!* 🔗\n\n> 💫 Acción realizada por: ${usuario}`
     const status = `❱❱ 𝗢́𝗥𝗗𝗘𝗡𝗘𝗦 𝗥𝗘𝗖𝗜𝗕𝗜𝗗𝗔𝗦 ❰❰\n\n👤 ${m.messageStubParameters?.[0] == 'on'? '𝗖𝗘𝗥𝗥𝗔𝗗𝗢': '𝗔𝗕𝗜𝗘𝗥𝗧𝗢'} 𝗣𝗢𝗥 ${usuario}\n\n> 💬 Ahora *${m.messageStubParameters?.[0] == 'on'? 'solo los administradores': 'todos'}* pueden enviar mensajes.`
-    const admingp = `❱❱ 𝙁𝙀𝙇𝙄𝘾𝙄𝘿𝘼𝘿𝙀𝙎 ❰❰\n\n👤 @${((m.messageStubParameters?.[0]?.split('@')[0]) || '')}\n» 𝘼𝙃𝙊𝙍𝘼 𝙀𝙎 𝘼𝘿𝙈𝙄𝙉.\n\n» 𝘼𝘾𝘾𝙄𝙊́𝙉 𝙍𝙀𝘼𝙇𝙄𝙕𝘼𝘿𝘼 𝙋𝙊𝙍:\n${usuario}`
-    const noadmingp = `❱❱ 𝙄𝙉𝙁𝙊𝙍𝙈𝘼𝘾𝙄𝙊́𝙉 ❰❰\n\n👤 @${((m.messageStubParameters?.[0]?.split('@')[0]) || '')}\n» 𝙔𝘼 𝙉𝙊 𝙀𝙎 𝘼𝘿𝙈𝙄𝙉.\n\n» 𝘼𝘾𝘾𝙄𝙊́𝙉 𝙍𝙀𝘼𝙇𝙄𝙕𝘼𝘿𝘼 𝙋𝙊𝙍:\n${usuario}`
+    const admingp = `❱❱ 𝙁𝙀𝙇𝙄𝘾𝙄𝘿𝘼𝘿𝙀𝙎 ❰❰\n\n👤 @${getRealJid(m.messageStubParameters?.[0])}\n» 𝘼𝙃𝙊𝙍𝘼 𝙀𝙎 𝘼𝘿𝙈𝙄𝙉.\n\n» 𝘼𝘾𝘾𝙄𝙊́𝙉 𝙍𝙀𝘼𝙇𝙄𝙕𝘼𝘿𝘼 𝙋𝙊𝙍:\n${usuario}`
+    const noadmingp = `❱❱ 𝙄𝙉𝙁𝙊𝙍𝙈𝘼𝘾𝙄𝙊́𝙉 ❰❰\n\n👤 @${getRealJid(m.messageStubParameters?.[0])}\n» 𝙔𝘼 𝙉𝙊 𝙀𝙎 𝘼𝘿𝙈𝙄𝙉.\n\n» 𝘼𝘾𝘾𝙄𝙊́𝙉 𝙍𝙀𝘼𝙇𝙄𝙕𝘼𝘿𝘼 𝙋𝙊𝙍:\n${usuario}`
 
     // Limpiar sesiones antiguas
-    const uniqid = (m.isGroup ? m.chat : m.sender).split('@')[0]
+    const uniqid = getRealJid(m.chat)
     const sessionPath = './GataBotSession/'
-
-    // Crear carpeta si no existe
-    if (!existsSync(sessionPath)) {
-        mkdirSync(sessionPath, { recursive: true })
-    }
+    if (!existsSync(sessionPath)) mkdirSync(sessionPath, { recursive: true })
 
     for (const file of await fs.readdir(sessionPath)) {
         if (file.includes(uniqid)) {
             await fs.unlink(path.join(sessionPath, file))
-            console.log(
-                `${chalk.yellow.bold('[ ⚠️ Archivo Eliminado ]')} ${chalk.greenBright(`'${file}'`)}\n` +
-                `${chalk.blue('(Session PreKey)')} ${chalk.redBright('que provoca el "undefined" en el chat')}`
-            )
+            console.log(`${chalk.yellow('[⚠️ Archivo Eliminado]')} ${chalk.green(file)}`)
         }
     }
 

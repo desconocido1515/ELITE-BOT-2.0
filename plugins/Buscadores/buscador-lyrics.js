@@ -1,84 +1,135 @@
-import {find_lyrics} from '@brandond/findthelyrics';
-import {getTracks} from '@green-code/music-track-data';
-import {googleImage} from '@bochilteam/scraper';
-const handler = async (m, {conn, text, usedPrefix, command}) => {
-const teks = text ? text : m.quoted && m.quoted.text ? m.quoted.text : '';
-let fkontak = { "key": { "participants":"0@s.whatsapp.net", "remoteJid": "status@broadcast", "fromMe": false, "id": "Halo" }, "message": { "contactMessage": { "vcard": `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${m.sender.split('@')[0]}:${m.sender.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD` }}, "participant": "0@s.whatsapp.net" }
-if (!teks) throw `${lenguajeGB['smsAvisoMG']()}𝙄𝙉𝙂𝙍𝙀𝙎𝙀 𝙀𝙇 𝙉𝙊𝙈𝘽𝙍𝙀 𝘿𝙀 𝙐𝙉𝘼 𝘾𝘼𝙉𝘾𝙄𝙊𝙉 𝙋𝘼𝙍𝘼 𝙊𝘽𝙏𝙀𝙉𝙀𝙍 𝙇𝘼 𝙇𝙀𝙏𝙍𝘼\n𝙀𝙅𝙀𝙈𝙋𝙇𝙊\n*${usedPrefix + command} Runaway*\n\n𝙀𝙉𝙏𝙀𝙍 𝙏𝙃𝙀 𝙉𝘼𝙈𝙀 𝙊𝙁 𝘼 𝙎𝙊𝙉𝙂 𝙏𝙊 𝙂𝙀𝙏 𝙏𝙃𝙀 𝙇𝙔𝙍𝙄𝘾𝙎\n𝙀𝙓𝘼𝙈𝙋𝙇𝙀\n*${usedPrefix + command} Billie Eilish bored*`
-try {
-const result = await getTracks(teks);
-const lyrics = await find_lyrics(`${result[0].artist} ${result[0].title}`);
-const res = await fetch(global.API('https://some-random-api.com', '/lyrics', {title: result[0].artist + result[0].title}));
-const json = await res.json();
-let img;
-try {
-img = result.album.artwork;
-} catch {
-try {
-img = json.thumbnail.genius;
-} catch {
-const bochil = await googleImage(`${result[0].artist} ${result[0].title}`);
-img = await bochil.getRandom();
-}}
-await conn.sendMessage(m.chat, {image: {url: img}, caption: `𝙏𝙄𝙏𝙐𝙇𝙊 | 𝙏𝙄𝙏𝙇𝙀 
-💚 *${result[0].title || ''}*
 
-𝘼𝙐𝙏𝙊𝙍(𝘼) | 𝘼𝙐𝙏𝙃𝙊𝙍
-💜 *${result[0].artist || ''}*
+import axios from 'axios'
+import { v4 as uuidv4} from 'uuid'
+import readline from 'readline'
 
-${lyrics || ''}`}, {quoted: fkontak});
-await conn.sendMessage(m.chat, {audio: {url: result[0].preview}, fileName: `${result[0].artist} ${result[0].title}.mp3`, mimetype: 'audio/mp4'}, {quoted: m});
+let handler = async (m, { conn, text, usedPrefix, command}) => {
+  try {
+    if (!text.includes('|')) return m.reply(`Ejemplo de uso:\n.sonu título | letra | estado de ánimo | género | voz`)
+    let [titulo, letra, estado, genero, voz] = text.split('|').map(v => v.trim())
+
+    if (!titulo) return m.reply('⚠️ El título de la canción no puede estar vacío.')
+    if (!letra) return m.reply('⚠️ Falta la letra de la canción.')
+    if (letra.length> 1500) return m.reply('⚠️ La letra no puede superar los 1500 caracteres.')
+
+    m.reply('⏳ Generando canción, espera un momento...')
+
+    const deviceId = uuidv4()
+    const userHeaders = {
+      'user-agent': 'NB Android/1.0.0',
+      'content-type': 'application/json',
+      'accept': 'application/json',
+      'x-platform': 'android',
+      'x-app-version': '1.0.0',
+      'x-country': 'VE',
+      'accept-language': 'es-ES',
+      'x-client-timezone': 'America/Caracas',
+}
+
+    const msgId = uuidv4()
+    const time = Date.now().toString()
+
+    const registerHeaders = {
+...userHeaders,
+      'x-device-id': deviceId,
+      'x-request-id': msgId,
+      'x-message-id': msgId,
+      'x-request-time': time
+}
+
+    const fcmToken = 'eqnTqlxMTSKQL5NQz6r5aP:APA91bHa3CvL5Nlcqx2yzqTDAeqxm_L_vIYxXqehkgmTsCXrV29eAak6_jqXv5v1mQrdw4BGMLXl_BFNrJ67Em0vmdr3hQPVAYF8kR7RDtTRHQ08F3jLRRI'
+
+    const reg = await axios.put('https://musicai.apihub.today/api/v1/users', {
+      deviceId,
+      fcmToken
+}, { headers: registerHeaders})
+
+    const userId = reg.data.id
+
+    const createHeaders = {
+...registerHeaders,
+      'x-client-id': userId
+}
+
+    const cuerpo = {
+      type: 'lyrics',
+      name: titulo,
+      lyrics: letra
+}
+    if (estado) cuerpo.mood = estado
+    if (genero) cuerpo.genre = genero
+    if (voz) cuerpo.gender = voz
+
+    const create = await axios.post('https://musicai.apihub.today/api/v1/song/create', cuerpo, { headers: createHeaders})
+    const idCancion = create.data.id
+
+    const checkHeaders = {
+...userHeaders,
+      'x-client-id': userId
+}
+
+    const esperar = ms => new Promise(resolve => setTimeout(resolve, ms))
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout})
+    let intentos = 0
+    let encontrada = null
+
+    while (true) {
+      const check = await axios.get('https://musicai.apihub.today/api/v1/song/user', {
+        params: {
+          userId,
+          isFavorite: false,
+          page: 1,
+          searchText: ''
+},
+        headers: checkHeaders
+})
+
+      encontrada = check.data.datas.find(song => song.id === idCancion)
+
+      if (!encontrada) {
+        rl.close()
+        return m.reply("⚠️ Parece que la canción aún no está lista.")
+}
+
+      readline.cursorTo(process.stdout, 0)
+      process.stdout.write(`🔄 [${++intentos}] Estado: ${encontrada.status} | Proceso: ${encontrada.url? '✅ Finalizado': '⏳ Generando...'}`)
+
+      if (encontrada.url) {
+        rl.close()
+
+        await conn.sendMessage(m.chat, {
+          audio: { url: encontrada.url},
+          mimetype: 'audio/mpeg',
+          fileName: `${encontrada.name}.mp3`,
+          ptt: false,
+          contextInfo: {
+            forwardingScore: 999999,
+            isForwarded: true,
+            externalAdReply: {
+              title: `Suno Music AI`,
+              body: `${encontrada.name} | Estado: ${encontrada.status}`,
+              mediaType: 1,
+              previewType: 0,
+              renderLargerThumbnail: true,
+              thumbnailUrl: encontrada.thumbnail_url,
+              sourceUrl: encontrada.url
+}
+}
+}, { quoted: m})
+
+        return
+}
+
+      await esperar(3000)
+}
+
 } catch (e) {
-await conn.reply(m.chat, `${lenguajeGB['smsMalError3']()}#report ${usedPrefix + command}\n\n${wm}`, fkontak, m)
-console.log(`❗❗ ${lenguajeGB['smsMensError2']()} ${usedPrefix + command} ❗❗`)
-console.log(e)
-handler.limit = 0
-}}
-handler.help = ['lirik','letra'].map(v => v + ' <Apa>')
-handler.tags = ['internet']
-handler.command = /^(lirik|lyrics|lyric|letra)$/i
-handler.limit = 0
-handler.level = 0
-handler.exp = 0
-export default handler
+    return m.reply(`❌ Error: ${e?.message || e}`)
+}
+}
 
-/*import fetch from 'node-fetch'
-import { lyrics, lyricsv2, googleImage } from '@bochilteam/scraper'
-let handler = async (m, { conn, text, usedPrefix, command }) => {
-let teks = text ? text : m.quoted && m.quoted.text ? m.quoted.text : ''
-let fkontak = { "key": { "participants":"0@s.whatsapp.net", "remoteJid": "status@broadcast", "fromMe": false, "id": "Halo" }, "message": { "contactMessage": { "vcard": `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${m.sender.split('@')[0]}:${m.sender.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD` }}, "participant": "0@s.whatsapp.net" }
-if (!teks) throw `${lenguajeGB['smsAvisoMG']()}𝙄𝙉𝙂𝙍𝙀𝙎𝙀 𝙀𝙇 𝙉𝙊𝙈𝘽𝙍𝙀 𝘿𝙀 𝙐𝙉𝘼 𝘾𝘼𝙉𝘾𝙄𝙊𝙉 𝙋𝘼𝙍𝘼 𝙊𝘽𝙏𝙀𝙉𝙀𝙍 𝙇𝘼 𝙇𝙀𝙏𝙍𝘼\n𝙀𝙅𝙀𝙈𝙋𝙇𝙊\n*${usedPrefix + command} Runaway*\n\n𝙀𝙉𝙏𝙀𝙍 𝙏𝙃𝙀 𝙉𝘼𝙈𝙀 𝙊𝙁 𝘼 𝙎𝙊𝙉𝙂 𝙏𝙊 𝙂𝙀𝙏 𝙏𝙃𝙀 𝙇𝙔𝙍𝙄𝘾𝙎\n𝙀𝙓𝘼𝙈𝙋𝙇𝙀\n*${usedPrefix + command} Billie Eilish bored*`
-const result = await lyricsv2(teks).catch(async _ => await lyrics(teks))
-try { 
-let res = await fetch(global.API('https://some-random-api.ml', '/lyrics', {
-title: result.author + result.title}))
-if (!res.ok) throw await res.text()
-let json = await res.json()
-if (!json.thumbnail.genius) throw json
+handler.command = ['sonu']
+handler.tags = ['inteligencia_artificial']
+handler.help = ['sonu <título | letra | estado | género | voz>']
 
-await conn.reply(m.chat, `𝙏𝙄𝙏𝙐𝙇𝙊 | 𝙏𝙄𝙏𝙇𝙀 
-💚 *${result.title}*
-
-𝘼𝙐𝙏𝙊𝙍(𝘼) | 𝘼𝙐𝙏𝙃𝙊𝙍
-💜 *${result.author}*
-
-
-${result.lyrics}
-
-
-𝙀𝙉𝙇𝘼𝘾𝙀 | 𝙐𝙍𝙇
-🧡 *${result.link}*`, fkontak,  m)
-
-} catch (e) {
-  await conn.reply(m.chat, `*⚠️ VUELVA A INTERNARLO, SI EL COMANDO SIGUE FALLANDO REPÓRTELO A LA CREADORA USANDO #reporte*`, m)
-console.log(`❗❗ ${lenguajeGB['smsMensError2']()} ${usedPrefix + command} ❗❗`)
-console.log(e)
-}}
-handler.help = ['lirik','letra'].map(v => v + ' <Apa>')
-handler.tags = ['internet']
-handler.command = /^(lirik|lyrics|lyric|letra)$/i
-handler.limit = 1
-handler.level = 3
-handler.exp = 55
-export default handler */
-
+export default handler;

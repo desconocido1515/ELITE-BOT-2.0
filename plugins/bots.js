@@ -49,16 +49,16 @@ let handler = async (m, { conn }) => {
         // 🔄 SUBBOTS CONECTADOS
         // =============================================
         if (activeBots.length > 0) {
-            message += ``;
+            message += `\n`;
 
             activeBots.forEach((bot, index) => {
                 const number = bot.user.jid.split('@')[0];
                 const uptime = getBotUptime(bot.user.jid);
                 const status = getBotStatus(bot);
                 
-                message += `${index + 1}. 💻 @${number}
+ message += `${index + 1}. 💻 @${number}
 *Activo:* ${uptime}
-${index < activeBots.length - 1 ? '\n\n' : ''}`;
+${index < activeBots.length - 1 ? '\n' : ''}`;
             });
         } else {
             message += `*╭─「 🔄 𝐒𝐔𝐁𝐁𝐎𝐓𝐒 」─*

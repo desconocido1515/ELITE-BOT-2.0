@@ -91,6 +91,14 @@ nrtm: 'https://nurutomo.herokuapp.com',
 xteam: 'https://api.xteam.xyz',
 nzcha: 'http://nzcha-apii.herokuapp.com',
 bg: 'http://bochil.ddns.net',
+
+
+xyro: { url: 'https://api.xyro.xyz' },
+  yupra: { url: 'https://api.yupra.xyz' },
+  vreden: { url: 'https://api.vreden.xyz' },
+  delirius: { url: 'https://api.delirius.xyz' },
+  zenzxz: { url: 'https://api.zenzxz.xyz' },
+  
 fdci: 'https://api.fdci.se',
 dzx: 'https://api.dhamzxploit.my.id',
 bsbt: 'https://bsbt-api-rest.herokuapp.com',

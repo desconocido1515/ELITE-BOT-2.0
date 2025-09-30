@@ -230,16 +230,20 @@ if (m.isGroup) {
             isBotAdmin = botParticipant.admin === 'superadmin' || botParticipant.admin === 'admin'
         }
         
-        // DEBUG: Mostrar información de administradores (opcional)
-        if (m.text && m.text.startsWith(conn.prefix || global.prefix)) {
-            console.log(chalk.cyan('🔍 DEBUG ADMIN:'), {
-                sender: m.sender,
-                userAdmin: user?.admin,
-                isAdmin: isAdmin,
-                isRAdmin: isRAdmin,
-                isBotAdmin: isBotAdmin,
-                totalParticipants: participants.length
-            })
+        // DEBUG: Mostrar información de administradores (SOLO PARA TESTING)
+        if (m.text && typeof m.text === 'string') {
+            const currentPrefix = conn.prefix || global.prefix
+            if (typeof currentPrefix === 'string' && m.text.startsWith(currentPrefix)) {
+                console.log(chalk.cyan('🔍 DEBUG ADMIN:'), {
+                    sender: m.sender,
+                    userAdmin: user?.admin,
+                    isAdmin: isAdmin,
+                    isRAdmin: isRAdmin,
+                    isBotAdmin: isBotAdmin,
+                    command: m.text.split(' ')[0],
+                    totalParticipants: participants.length
+                })
+            }
         }
         
     } catch (error) {
@@ -278,25 +282,32 @@ if (m.isGroup) {
                 if (plugin.tags && plugin.tags.includes('admin')) {
                     continue
                 }
+            
             const str2Regex = str => str.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')
             let _prefix = plugin.customPrefix ? plugin.customPrefix : conn.prefix ? conn.prefix : global.prefix
-            let match = (_prefix instanceof RegExp ? 
-                [[_prefix.exec(m.text), _prefix]] :
-                Array.isArray(_prefix) ?
-                    _prefix.map(p => {
-                        let re = p instanceof RegExp ?
-                            p :
-                            new RegExp(str2Regex(p))
-                        return [re.exec(m.text), re]
-                    }) :
-                    typeof _prefix === 'string' ?
-                        [[new RegExp(str2Regex(_prefix)).exec(m.text), new RegExp(str2Regex(_prefix))]] :
-                        [[[], new RegExp]]
-            ).find(p => p[1])
+            
+            // CORRECCIÓN: Manejar correctamente los prefijos RegExp
+            let match
+            if (_prefix instanceof RegExp) {
+                match = [_prefix.exec(m.text), _prefix]
+            } else if (Array.isArray(_prefix)) {
+                match = _prefix.map(p => {
+                    let re = p instanceof RegExp ? p : new RegExp(str2Regex(p))
+                    return [re.exec(m.text), re]
+                }).find(p => p[0])
+            } else if (typeof _prefix === 'string') {
+                const regex = new RegExp(str2Regex(_prefix))
+                match = [regex.exec(m.text), regex]
+            } else {
+                match = [[], new RegExp]
+            }
+
+            if (!match || !match[0]) continue
+
             if (typeof plugin.before === 'function') {
                 if (await plugin.before.call(this, m, {
                     match,
-conn: this,
+                    conn: this,
                     participants,
                     groupMetadata,
                     user: participants.find(p => p.id === m.sender || p.jid === m.sender),
@@ -313,27 +324,29 @@ conn: this,
                 }))
                     continue
             }
+            
             if (typeof plugin !== 'function')
                 continue
+                
             if ((usedPrefix = (match[0] || '')[0])) {
                 let noPrefix = m.text.replace(usedPrefix, '')
                 let [command, ...args] = noPrefix.trim().split` `.filter(v => v)
                 args = args || []
                 let _args = noPrefix.trim().split` `.slice(1)
-// Tesis estuvo aquí 🙀
+                
+                // Tesis estuvo aquí 🙀
                 let text = _args.join` `  
-command = (command || '').toLowerCase()  
-const gruposPermitidos = ['120363420992965884@g.us','120363404767596170@g.us'
-];
+                command = (command || '').toLowerCase()  
+                
+                const gruposPermitidos = ['120363420992965884@g.us','120363404767596170@g.us']
+                const comandosPermitidos = ['serbot', 'bots', 'kick', 'code', 's', 'delsession', 'on', 'off', 'tutosub']
 
-const comandosPermitidos = ['serbot', 'bots', 'kick', 'code', 's', 'delsession', 'on', 'off', 'tutosub'];
-
-if (gruposPermitidos.includes(m.chat) &&!comandosPermitidos.includes(command)) {
-  return;
-}
+                if (gruposPermitidos.includes(m.chat) && !comandosPermitidos.includes(command)) {
+                    return
+                }
 
                 let fail = plugin.fail || global.dfail
-               let isAccept = plugin.command instanceof RegExp ? 
+                let isAccept = plugin.command instanceof RegExp ? 
                     plugin.command.test(command) :
                     Array.isArray(plugin.command) ?
                         plugin.command.some(cmd => cmd instanceof RegExp ? 
@@ -346,6 +359,7 @@ if (gruposPermitidos.includes(m.chat) &&!comandosPermitidos.includes(command)) {
 
                 if (!isAccept)
                     continue
+                    
                 m.plugin = name
                 if (m.chat in global.db.data.chats || m.sender in global.db.data.users) {
                     let chat = global.db.data.chats[m.chat]
@@ -358,6 +372,7 @@ if (gruposPermitidos.includes(m.chat) &&!comandosPermitidos.includes(command)) {
                     if (name != 'owner-unbanbot.js' && setting?.banned)
                         return
                 }
+                
                 let adminMode = global.db.data.chats[m.chat].modoadmin
 
                 if (adminMode && !isOwner && !isROwner && m.isGroup && !isAdmin) return
@@ -391,7 +406,7 @@ if (gruposPermitidos.includes(m.chat) &&!comandosPermitidos.includes(command)) {
                     fail('admin', m, this)
                     continue
                 }
-                if (plugin.premsub && !isPremSubs) { // Premium Subbots By WillZek (Por El Momento No Tiene Lógica De Premium)
+                if (plugin.premsub && !isPremSubs) {
                     fail('premsubs', m, this)
                     continue
                 }
@@ -403,16 +418,19 @@ if (gruposPermitidos.includes(m.chat) &&!comandosPermitidos.includes(command)) {
                     fail('unreg', m, this)
                     continue
                 }
+                
                 m.isCommand = true
                 let xp = 'exp' in plugin ? parseInt(plugin.exp) : 17 
                 if (xp > 200)
                     m.reply('chirrido -_-')
                 else
                     m.exp += xp
+                    
                 if (!isPrems && plugin.limit && global.db.data.users[m.sender].limit < plugin.limit * 1) {
                     conn.reply(m.chat, `Se agotaron tus *✳️ Eris*`, m, rcanal)
                     continue
                 }
+                
                 let extra = {
                     match,
                     usedPrefix,
@@ -437,6 +455,7 @@ if (gruposPermitidos.includes(m.chat) &&!comandosPermitidos.includes(command)) {
                     __dirname: ___dirname,
                     __filename
                 }
+                
                 try {
                     await plugin.call(this, m, extra)
                     if (!isPrems)
@@ -509,14 +528,14 @@ if (gruposPermitidos.includes(m.chat) &&!comandosPermitidos.includes(command)) {
         }
 
         try {
-      if (!opts['noprint']) await (await import(`./lib/print.js`)).default(m, this)
-    } catch (e) {
-      console.log(m, m.quoted, e)
+            if (!opts['noprint']) await (await import(`./lib/print.js`)).default(m, this)
+        } catch (e) {
+            console.log(m, m.quoted, e)
+        }
+        const settingsREAD = global.db.data.settings[this.user.jid] || {}
+        if (opts['autoread']) await this.readMessages([m.key])
+        if (settingsREAD.autoread) await this.readMessages([m.key])
     }
-    const settingsREAD = global.db.data.settings[this.user.jid] || {}
-    if (opts['autoread']) await this.readMessages([m.key])
-    if (settingsREAD.autoread) await this.readMessages([m.key])
-  }
 }
 
 global.dfail = async (type, m, conn, usedPrefix) => {
@@ -539,7 +558,6 @@ global.dfail = async (type, m, conn, usedPrefix) => {
         await m.react('✖️')
     }
 }
-
 
 let file = global.__filename(import.meta.url, true)
 watchFile(file, async () => {

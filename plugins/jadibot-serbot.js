@@ -65,6 +65,116 @@ gataJadiBot(gataJBOptions)
 handler.command = /^(jadibot|serbot|rentbot|code)/i
 export default handler 
 
+// Función para reiniciar todos los sub-bots
+async function restartAllSubBots() {
+    console.log(chalk.bold.cyanBright(`🔄 Iniciando reinicio de todos los sub-bots...`));
+    
+    // Desconectar todos los sub-bots existentes
+    for (let i = global.conns.length - 1; i >= 0; i--) {
+        const conn = global.conns[i];
+        if (conn && conn.ws && conn.user && conn.user.jid !== global.conn.user.jid) {
+            try {
+                console.log(chalk.bold.yellowBright(`Desconectando sub-bot: +${conn.user.jid.split('@')[0]}`));
+                conn.ws.close();
+                conn.ev.removeAllListeners();
+            } catch (e) {
+                console.error(chalk.redBright(`Error al desconectar sub-bot:`), e);
+            }
+            // Remover de la lista
+            global.conns.splice(i, 1);
+        }
+    }
+
+    // Esperar un momento para que se cierren las conexiones
+    await sleep(2000);
+
+    // Reconectar todos los sub-bots
+    await checkSubBots(true);
+    
+    console.log(chalk.bold.greenBright(`✅ Reinicio de sub-bots completado`));
+}
+
+// Función mejorada para verificar y reconectar sub-bots
+async function checkSubBots(forceRestart = false) {
+    const subBotDir = path.resolve("./GataJadiBot");
+    if (!fs.existsSync(subBotDir)) {
+        console.log(chalk.bold.yellow(`📁 No se encontró directorio de sub-bots`));
+        return;
+    }
+
+    const subBotFolders = fs.readdirSync(subBotDir).filter(folder => 
+        fs.statSync(path.join(subBotDir, folder)).isDirectory()
+    );
+
+    if (forceRestart) {
+        console.log(chalk.bold.cyanBright(`🔄 Reinicio forzado de ${subBotFolders.length} sub-bots...`));
+    } else {
+        console.log(chalk.bold.cyanBright(`🔍 Verificando ${subBotFolders.length} sub-bots...`));
+    }
+
+    // Solo limpiar conexiones si es reinicio forzado
+    if (forceRestart) {
+        for (const conn of global.conns) {
+            if (conn && conn.ws && conn.user && conn.user.jid !== global.conn.user.jid) {
+                try {
+                    console.log(chalk.bold.yellowBright(`⏹️ Desconectando: +${conn.user.jid.split('@')[0]}`));
+                    conn.ws.close();
+                    conn.ev.removeAllListeners();
+                } catch (e) {
+                    console.error(chalk.redBright(`❌ Error al desconectar:`), e);
+                }
+            }
+        }
+        // Limpiar array de conexiones (excepto el bot principal)
+        global.conns = global.conns.filter(conn => 
+            conn && conn.user && conn.user.jid === global.conn.user.jid
+        );
+        await sleep(1000);
+    }
+
+    let reconnectedCount = 0;
+    
+    for (const folder of subBotFolders) {
+        const pathGataJadiBot = path.join(subBotDir, folder);
+        const credsPath = path.join(pathGataJadiBot, "creds.json");
+
+        if (!fs.existsSync(credsPath)) {
+            console.log(chalk.bold.yellowBright(`📂 Sub-bot (+${folder}) sin creds.json`));
+            continue;
+        }
+
+        // Verificar si ya está conectado
+        const isAlreadyConnected = global.conns.some(conn => 
+            conn && conn.user && conn.user.jid === `${folder}@s.whatsapp.net`
+        );
+
+        if (isAlreadyConnected && !forceRestart) {
+            console.log(chalk.bold.greenBright(`✅ Sub-bot (+${folder}) ya está conectado`));
+            continue;
+        }
+
+        try {
+            console.log(chalk.bold.blueBright(`🔄 Conectando sub-bot (+${folder})...`));
+            await gataJadiBot({
+                pathGataJadiBot,
+                m: null,
+                conn: global.conn,
+                args: [],
+                usedPrefix: '#',
+                command: 'jadibot',
+                fromCommand: false
+            });
+            reconnectedCount++;
+            console.log(chalk.bold.greenBright(`✅ Sub-bot (+${folder}) conectado`));
+            await sleep(2000); // Esperar entre conexiones
+        } catch (e) {
+            console.error(chalk.redBright(`❌ Error al conectar sub-bot (+${folder}):`), e);
+        }
+    }
+
+    console.log(chalk.bold.greenBright(`🎯 ${reconnectedCount} sub-bots reconectados exitosamente`));
+}
+
 export async function gataJadiBot(options) {
 let { pathGataJadiBot, m, conn, args, usedPrefix, command } = options
 if (command === 'code') {
@@ -356,53 +466,8 @@ console.log(chalk.bold.red(`Error inesperado al seguir canales: ${e.message}`));
 }
 }}
 
-async function checkSubBots() {
-    const subBotDir = path.resolve("./GataJadiBot");
-    if (!fs.existsSync(subBotDir)) return;
-    const subBotFolders = fs.readdirSync(subBotDir).filter(folder => 
-        fs.statSync(path.join(subBotDir, folder)).isDirectory()
-    );
+// Verificación periódica (solo reconecta los desconectados)
+setInterval(() => checkSubBots(false), 120000);
 
-    console.log(chalk.bold.cyanBright(`Iniciando reinicio forzado de sub-bots...`));
-
-    for (const conn of global.conns) {
-        if (conn && conn.ws) {
-            try {
-                console.log(chalk.bold.yellowBright(`Desconectando sub-bot (+${conn.user?.jid?.split('@')[0] || 'unknown'})...`));
-                conn.ws.close();
-                conn.ev.removeAllListeners();
-            } catch (e) {
-                console.error(chalk.redBright(`Error al desconectar sub-bot:`), e);
-            }
-        }
-    }
-    global.conns = [];
-
-    for (const folder of subBotFolders) {
-        const pathGataJadiBot = path.join(subBotDir, folder);
-        const credsPath = path.join(pathGataJadiBot, "creds.json");
-
-        if (!fs.existsSync(credsPath)) {
-            console.log(chalk.bold.yellowBright(`Sub-bot (+${folder}) no tiene creds.json. Omitiendo...`));
-            continue;
-        }
-
-        try {
-            console.log(chalk.bold.greenBright(`Reconectando sub-bot (+${folder})...`));
-            await gataJadiBot({
-                pathGataJadiBot,
-                m: null,
-                conn: global.conn,
-                args: [],
-                usedPrefix: '#',
-                command: 'jadibot',
-                fromCommand: false
-            });
-            console.log(chalk.bold.greenBright(`Sub-bot (+${folder}) reconectado exitosamente.`));
-        } catch (e) {
-            console.error(chalk.redBright(`Error al reconectar sub-bot (+${folder}):`), e);
-        }
-    }
-}
-
-setInterval(checkSubBots, 120000)
+// Exportar función de reinicio para uso global
+global.restartAllSubBots = restartAllSubBots;

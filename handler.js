@@ -14,13 +14,14 @@ const delay = ms => isNumber(ms) && new Promise(resolve => setTimeout(function (
 }, ms))
 
 export async function handler(chatUpdate) {
-    // DEBUG: Ver todos los mensajes que llegan con stubs
+    // DEBUG: Ver todos los mensajes que llegan con stubs (CORREGIDO)
     if (chatUpdate.messages && chatUpdate.messages.length > 0) {
         const lastMessage = chatUpdate.messages[chatUpdate.messages.length - 1]
         if (lastMessage.messageStubType) {
             console.log('📨 MENSAJE CON STUB RECIBIDO:', {
                 stubType: lastMessage.messageStubType,
-                stubName: WAMessageStubType[lastMessage.messageStubType],
+                // CORRECCIÓN APLICADA: Usar proto.WebMessageInfo.StubType
+                stubName: proto.WebMessageInfo.StubType[lastMessage.messageStubType] || 'UNKNOWN_STUB',
                 params: lastMessage.messageStubParameters,
                 chat: lastMessage.key?.remoteJid,
                 isGroup: lastMessage.key?.remoteJid?.endsWith('@g.us')
@@ -324,11 +325,12 @@ if (m.isGroup) {
                         __filename
                     })
                     
-                    // DEBUG: Verificar si se ejecutó el detector para stubs
+                    // DEBUG: Verificar si se ejecutó el detector para stubs (CORREGIDO)
                     if (m.messageStubType && name.includes('detect')) {
                         console.log(`🎯 Plugin before ejecutado: ${name}`, {
                             stubType: m.messageStubType,
-                            stubName: WAMessageStubType[m.messageStubType],
+                            // CORRECCIÓN APLICADA
+                            stubName: proto.WebMessageInfo.StubType[m.messageStubType] || 'UNKNOWN_STUB',
                             result: beforeResult
                         })
                     }

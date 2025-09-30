@@ -6,8 +6,8 @@ import { WAMessageStubType } from '@whiskeysockets/baileys'
 
 let handler = m => m
 
-// Función para obtener el jid real y evitar números incorrectos
-const getRealJid = (jid) => jid?.split?.('@')?.[0] || jid
+// Función para obtener el jid real y evitar errores con @lid
+const getRealJid = (jid) => jid?.replace(/@lid$/, '')?.split?.('@')?.[0] || jid
 
 handler.before = async function (m, { conn }) {
     if (!m.isGroup || !m.messageStubType) return
@@ -26,7 +26,7 @@ handler.before = async function (m, { conn }) {
         message: {
             locationMessage: {
                 name: "𝙀𝙡𝙞𝙩𝙚 𝘽𝙤𝙩 𝙂𝙡𝙤𝙗𝙖𝙡 2023 -",
-                jpegThumbnail: await (await fetch('https://files.catbox.moe/1j784p.jpg')).buffer(),
+                jpegThumbnail: Buffer.from(await (await fetch('https://files.catbox.moe/1j784p.jpg')).arrayBuffer()),
                 vcard:
                     "BEGIN:VCARD\n" +
                     "VERSION:3.0\n" +
@@ -48,13 +48,14 @@ handler.before = async function (m, { conn }) {
     let pp = await conn.profilePictureUrl(m.chat, 'image').catch(() => null) || 'https://files.catbox.moe/xr2m6u.jpg'
 
     // Mensajes predefinidos
+    const stubUser = getRealJid(m.messageStubParameters?.[0])
     const nombre = `✨ ${usuario} *ha cambiado el nombre del grupo* ✨\n\n> 📝 *Nuevo nombre:* _${m.messageStubParameters?.[0] || ''}_`
     const foto = `📸 *¡Nueva foto de grupo!* 📸\n\n> 💫 Acción realizada por: ${usuario}`
     const edit = `⚙️ ${usuario} ha ajustado la configuración del grupo.\n\n> 🔒 Ahora *${m.messageStubParameters?.[0] == 'on'? 'solo los administradores': 'todos'}* pueden configurar el grupo.`
     const newlink = `🔗 *¡El enlace del grupo ha sido restablecido!* 🔗\n\n> 💫 Acción realizada por: ${usuario}`
     const status = `❱❱ 𝗢́𝗥𝗗𝗘𝗡𝗘𝗦 𝗥𝗘𝗖𝗜𝗕𝗜𝗗𝗔𝗦 ❰❰\n\n👤 ${m.messageStubParameters?.[0] == 'on'? '𝗖𝗘𝗥𝗥𝗔𝗗𝗢': '𝗔𝗕𝗜𝗘𝗥𝗧𝗢'} 𝗣𝗢𝗥 ${usuario}\n\n> 💬 Ahora *${m.messageStubParameters?.[0] == 'on'? 'solo los administradores': 'todos'}* pueden enviar mensajes.`
-    const admingp = `❱❱ 𝙁𝙀𝙇𝙄𝘾𝙄𝘿𝘼𝘿𝙀𝙎 ❰❰\n\n👤 @${getRealJid(m.messageStubParameters?.[0])}\n» 𝘼𝙃𝙊𝙍𝘼 𝙀𝙎 𝘼𝘿𝙈𝙄𝙉.\n\n» 𝘼𝘾𝘾𝙄𝙊́𝙉 𝙍𝙀𝘼𝙇𝙄𝙕𝘼𝘿𝘼 𝙋𝙊𝙍:\n${usuario}`
-    const noadmingp = `❱❱ 𝙄𝙉𝙁𝙊𝙍𝙈𝘼𝘾𝙄𝙊́𝙉 ❰❰\n\n👤 @${getRealJid(m.messageStubParameters?.[0])}\n» 𝙔𝘼 𝙉𝙊 𝙀𝙎 𝘼𝘿𝙈𝙄𝙉.\n\n» 𝘼𝘾𝘾𝙄𝙊́𝙉 𝙍𝙀𝘼𝙇𝙄𝙕𝘼𝘿𝘼 𝙋𝙊𝙍:\n${usuario}`
+    const admingp = `❱❱ 𝙁𝙀𝙇𝙄𝘾𝙄𝘿𝘼𝘿𝙀𝙎 ❰❰\n\n👤 @${stubUser}\n» 𝘼𝙃𝙊𝙍𝘼 𝙀𝙎 𝘼𝘿𝙈𝙄𝙉.\n\n» 𝘼𝘾𝘾𝙄𝙊́𝙉 𝙍𝙀𝘼𝙇𝙄𝙕𝘼𝘿𝘼 𝙋𝙊𝙍:\n${usuario}`
+    const noadmingp = `❱❱ 𝙄𝙉𝙁𝙊𝙍𝙈𝘼𝘾𝙄𝙊́𝙉 ❰❰\n\n👤 @${stubUser}\n» 𝙔𝘼 𝙉𝙊 𝙀𝙎 𝘼𝘿𝙈𝙄𝙉.\n\n» 𝘼𝘾𝘾𝙄𝙊́𝙉 𝙍𝙀𝘼𝙇𝙄𝙕𝘼𝘿𝘼 𝙋𝙊𝙍:\n${usuario}`
 
     // Limpiar sesiones antiguas
     const uniqid = getRealJid(m.chat)
@@ -85,11 +86,11 @@ handler.before = async function (m, { conn }) {
         case WAMessageStubType.GROUP_CHANGE_INVITE_LINK:
             await conn.sendMessage(m.chat, { text: newlink, mentions: [m.sender] }, { quoted: fkontak })
             break
-        case WAMessageStubType.GROUP_PARTICIPANT_ADD:
-            await conn.sendMessage(m.chat, { text: admingp, mentions: [m.sender] }, { quoted: fkontak })
+        case WAMessageStubType.GROUP_PARTICIPANT_PROMOTE:
+            await conn.sendMessage(m.chat, { text: admingp, mentions: [m.sender, stubUser] }, { quoted: fkontak })
             break
-        case WAMessageStubType.GROUP_PARTICIPANT_REMOVE:
-            await conn.sendMessage(m.chat, { text: noadmingp, mentions: [m.sender] }, { quoted: fkontak })
+        case WAMessageStubType.GROUP_PARTICIPANT_DEMOTE:
+            await conn.sendMessage(m.chat, { text: noadmingp, mentions: [m.sender, stubUser] }, { quoted: fkontak })
             break
         default:
             console.log({

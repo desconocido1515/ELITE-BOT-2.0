@@ -1,59 +1,45 @@
-
-// 🌿 Plugin: Play Audio por texto (YouTube).
-// 🌿 Función: Descarga y reproduce música.
-// 🌱 Autores: Izumi.xyz. BajoBots 
-// ⚠️ No eliminar ni modificar créditos, respeta al creador del código.
-import fetch from 'node-fetch'
 import yts from 'yt-search'
+import ytdl from 'ytdl-core'
 
 let handler = async (m, { conn, text, args }) => {
-  if (!text) {
-    return m.reply("🍃 Ingresa el texto de lo que quieres buscar")
-  }
+  if (!text) return m.reply("🍃 Ingresa el texto de lo que quieres buscar")
 
-  let ytres = await search(args.join(" "))
-  if (!ytres.length) {
-    return m.reply("🍃 No se encontraron resultados para tu búsqueda.")
-  }
+  // Buscar en YouTube
+  const ytres = await search(args.join(" "))
+  if (!ytres.length) return m.reply("🍃 No se encontraron resultados para tu búsqueda.")
 
-  let izumi = ytres[0]
-  let txt = `🎬 *Título*: ${izumi.title}
-⏱️ *Duración*: ${izumi.timestamp}
-📅 *Publicado*: ${izumi.ago}
-📺 *Canal*: ${izumi.author.name || 'Desconocido'}
-🔗 *Url*: ${izumi.url}`
-  await conn.sendFile(m.chat, izumi.image, 'thumbnail.jpg', txt, m)
+  const video = ytres[0]
+  const infoTxt = `🎬 *Título*: ${video.title}
+⏱️ *Duración*: ${video.timestamp}
+📅 *Publicado*: ${video.ago}
+📺 *Canal*: ${video.author.name || 'Desconocido'}
+🔗 *Url*: ${video.url}`
+
+  // Enviar miniatura
+  await conn.sendFile(m.chat, video.image, 'thumbnail.jpg', infoTxt, m)
 
   try {
-    const apiUrl = `https://orbit-oficial.vercel.app/api/download/YTMP3?key=OrbitPlus&url=${encodeURIComponent(izumi.url)}`
-    const response = await fetch(apiUrl)
-    const data = await response.json()
-
-    if (data.status !== true || !data.download) {
-      throw new Error('Fallo al obtener el audio. JSON inesperado')
-    }
-
-    const { title, download } = data
+    const audioStream = ytdl(video.url, { filter: 'audioonly', quality: 'highestaudio' })
 
     await conn.sendMessage(
       m.chat,
       {
-        audio: { url: download },
+        audio: audioStream,
         mimetype: 'audio/mpeg',
-        fileName: `${title}.mp3`
+        fileName: `${video.title}.mp3`
       },
       { quoted: m }
     )
-  } catch (error) {
-    console.error(error)
-    m.reply(`❌ Lo siento, no pude descargar el audio.\n${error.message}`)
+  } catch (err) {
+    console.error(err)
+    m.reply(`❌ No pude descargar el audio.\n${err.message}`)
   }
 }
 
 handler.command = /^(play)$/i
 export default handler
 
-async function search(query, options = {}) {
-  let result = await yts.search({ query, hl: "es", gl: "ES", ...options })
+async function search(query) {
+  const result = await yts.search({ query, hl: "es", gl: "ES" })
   return result.videos || []
 }

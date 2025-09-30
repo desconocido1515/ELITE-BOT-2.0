@@ -469,5 +469,53 @@ console.log(chalk.bold.red(`Error inesperado al seguir canales: ${e.message}`));
 // Verificación periódica (solo reconecta los desconectados)
 setInterval(() => checkSubBots(false), 120000);
 
-// Exportar función de reinicio para uso global
+// === SOLUCIÓN PARA RECONEXIÓN INMEDIATA DESPUÉS DE RESTART ===
+// Esto se ejecuta automáticamente cuando el bot principal se inicia
+
+// Función para reconexión inmediata
+async function immediateSubBotReconnect() {
+    console.log(chalk.bold.magenta('🚀 ACTIVANDO RECONEXIÓN INMEDIATA DE SUB-BOTS'));
+    console.log(chalk.bold.yellow('⏰ No esperando 2 minutos - Reconectando AHORA...'));
+    
+    try {
+        if (typeof checkSubBots === 'function') {
+            await checkSubBots(true);
+            console.log(chalk.bold.green('✅ Reconexión inmediata completada - Todos los sub-bots reconectados'));
+        } else {
+            console.log(chalk.bold.red('❌ Error: checkSubBots no encontrado'));
+        }
+    } catch (error) {
+        console.error(chalk.bold.red('❌ Error en reconexión inmediata:'), error);
+    }
+}
+
+// Ejecutar reconexión inmediata cuando el bot se inicia
+console.log(chalk.bold.green('🤖 Bot principal iniciado - Programando reconexión de sub-bots...'));
+
+// Primera reconexión rápida (5 segundos después del inicio)
+setTimeout(async () => {
+    await immediateSubBotReconnect();
+}, 5000);
+
+// Segunda verificación de respaldo (20 segundos después)
+setTimeout(async () => {
+    console.log(chalk.bold.blue('🔍 Verificación secundaria de sub-bots...'));
+    if (typeof checkSubBots === 'function') {
+        await checkSubBots(false);
+    }
+}, 20000);
+
+// Tercera verificación final (45 segundos después)
+setTimeout(async () => {
+    console.log(chalk.bold.cyan('⚡ Verificación final de sub-bots...'));
+    if (typeof checkSubBots === 'function') {
+        await checkSubBots(false);
+    }
+}, 45000);
+
+// Exportar funciones para uso global
 global.restartAllSubBots = restartAllSubBots;
+global.checkSubBots = checkSubBots;
+global.immediateSubBotReconnect = immediateSubBotReconnect;
+
+console.log(chalk.bold.cyan('🎯 Sistema de reconexión inmediata de sub-bots ACTIVADO'));

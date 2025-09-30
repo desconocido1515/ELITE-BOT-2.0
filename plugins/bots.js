@@ -49,7 +49,7 @@ let handler = async (m, { conn }) => {
         // 🔄 SUBBOTS CONECTADOS
         // =============================================
         if (activeBots.length > 0) {
-            message += `\n`;
+            message += ``;
 
             activeBots.forEach((bot, index) => {
                 const number = bot.user.jid.split('@')[0];

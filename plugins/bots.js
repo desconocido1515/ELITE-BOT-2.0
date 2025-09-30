@@ -70,17 +70,7 @@ ${index < activeBots.length - 1 ? '\n' : ''}`;
         // =============================================
         // 📊 ESTADÍSTICAS DEL SISTEMA
         // =============================================
-        message += `\n*╔═══════════════════╗*
-*║    📊 𝐄𝐒𝐓𝐀𝐃𝐈𝐒𝐓𝐈𝐂𝐀𝐒    ║*
-*╚═══════════════════╝*
-*┌─「 🖥️  𝐒𝐈𝐒𝐓𝐄𝐌𝐀 」─*
-*│* 🤖 *Total bots:* ${activeBots.length + 1}
-*│* ⚡ *Bots activos:* ${activeBots.length + 1}
-*│* 🔧 *Protocolo:* 𝗪𝗵𝗮𝘁𝘀𝗔𝗽𝗽-𝗕𝗼𝘁
-*│* 🛡️  *Estado:* 𝗢𝗣𝗘𝗥𝗔𝗧𝗜𝗩𝗢
-*└─────────────────*
-
-*🔊 _Sistema de bots funcionando óptimamente_*`;
+        message += `*🔊 _Sistema de bots funcionando óptimamente_*`;
 
         await conn.sendMessage(m.chat, { 
             text: message, 

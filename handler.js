@@ -195,23 +195,65 @@ const isPremSubs = subsactivos.some(jid => jid.replace(/[^0-9]/g, '') === sendNu
 
         let usedPrefix
 
-const groupMetadata = (m.isGroup ? ((conn.chats[m.chat] || {}).metadata || await this.groupMetadata(m.chat).catch(_ => null)) : {}) || {}
-const participants = (m.isGroup ? groupMetadata.participants : []) || []
-//- Matías es mi novia (Tesis) 🥺       
-const normalizeJid = jid => jid?.replace(/[^0-9]/g, '')
-const cleanJid = jid => jid?.split(':')[0] || ''
-const senderNum = normalizeJid(m.sender)
-const botNums = [this.user?.jid, this.user?.lid].map(j => normalizeJid(cleanJid(j)))
-const user = m.isGroup 
-  ? participants.find(u => normalizeJid(u.jid) === senderNum) 
-  : {}
-const bot = m.isGroup 
-  ? participants.find(u => botNums.includes(normalizeJid(u.id && u.jid))) 
-  : {}
+// =============================================
+// 🔧 SECCIÓN CORREGIDA - VERIFICACIÓN DE ADMINISTRADORES
+// =============================================
 
-const isRAdmin = user?.admin === 'superadmin'
-const isAdmin = isRAdmin || user?.admin === 'admin'
-const isBotAdmin = !!bot?.admin || bot?.admin === 'admin'
+let isRAdmin = false
+let isAdmin = false
+let isBotAdmin = false
+let participants = []
+let groupMetadata = {}
+
+if (m.isGroup) {
+    try {
+        // Obtener metadatos actualizados del grupo
+        groupMetadata = await this.groupMetadata(m.chat).catch(_ => null) || {}
+        participants = groupMetadata.participants || []
+        
+        // Buscar al usuario que envió el mensaje
+        const user = participants.find(p => p.id === m.sender || p.jid === m.sender)
+        
+        // Verificar si es administrador
+        if (user) {
+            isRAdmin = user.admin === 'superadmin'
+            isAdmin = isRAdmin || user.admin === 'admin'
+        }
+        
+        // Buscar al bot en los participantes
+        const botParticipant = participants.find(p => 
+            p.id === this.user.jid || p.jid === this.user.jid
+        )
+        
+        // Verificar si el bot es administrador
+        if (botParticipant) {
+            isBotAdmin = botParticipant.admin === 'superadmin' || botParticipant.admin === 'admin'
+        }
+        
+        // DEBUG: Mostrar información de administradores (opcional)
+        if (m.text && m.text.startsWith(conn.prefix || global.prefix)) {
+            console.log(chalk.cyan('🔍 DEBUG ADMIN:'), {
+                sender: m.sender,
+                userAdmin: user?.admin,
+                isAdmin: isAdmin,
+                isRAdmin: isRAdmin,
+                isBotAdmin: isBotAdmin,
+                totalParticipants: participants.length
+            })
+        }
+        
+    } catch (error) {
+        console.error(chalk.red('❌ Error al verificar administradores:'), error)
+        // En caso de error, asumir que no es admin para seguridad
+        isAdmin = false
+        isRAdmin = false
+        isBotAdmin = false
+    }
+}
+
+// =============================================
+// FIN DE SECCIÓN CORREGIDA
+// =============================================
 
         const ___dirname = path.join(path.dirname(fileURLToPath(import.meta.url)), './plugins')
         for (let name in global.plugins) {
@@ -257,8 +299,8 @@ const isBotAdmin = !!bot?.admin || bot?.admin === 'admin'
 conn: this,
                     participants,
                     groupMetadata,
-                    user,
-                    bot,
+                    user: participants.find(p => p.id === m.sender || p.jid === m.sender),
+                    bot: participants.find(p => p.id === this.user.jid || p.jid === this.user.jid),
                     isROwner,
                     isOwner,
                     isRAdmin,
@@ -382,8 +424,8 @@ if (gruposPermitidos.includes(m.chat) &&!comandosPermitidos.includes(command)) {
                     conn: this,
                     participants,
                     groupMetadata,
-                    user,
-                    bot,
+                    user: participants.find(p => p.id === m.sender || p.jid === m.sender),
+                    bot: participants.find(p => p.id === this.user.jid || p.jid === this.user.jid),
                     isROwner,
                     isOwner,
                     isRAdmin,
